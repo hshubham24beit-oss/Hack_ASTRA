@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Admin - VoteChain</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <nav class="navbar">
+      <a href="index.html" class="brand">🏛️ VoteChain</a>
+      <div class="nav-links">
+        <a href="admin.html">Admin Panel</a>
+        <a href="voter.html">Voter Panel</a>
+        <a href="/results">View Results</a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <h1>Admin: Create Election</h1>
+    <form id="electionForm" action="/create-election" method="POST">
+      <input type="text" name="title" placeholder="Election Title" required><br><br>
+      
+      <div id="candidates">
+        <input type="text" name="candidates" placeholder="Candidate Name" required><br><br>
+        <input type="text" name="candidates" placeholder="Candidate Name" required><br><br>
+      </div>
+
+      <button type="button" id="addCandidateBtn">+ Add Candidate</button><br><br>
+      <button type="submit">Create Election</button>
+    </form>
+    <p><a href="/">Home</a></p>
+  </main>
+
+  <script>
+    const addBtn = document.getElementById('addCandidateBtn');
+    const candidatesDiv = document.getElementById('candidates');
+
+    addBtn.addEventListener('click', () => {
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.name = 'candidates';
+      input.placeholder = 'Candidate Name';
+      input.required = true;
+      candidatesDiv.appendChild(input);
+      candidatesDiv.appendChild(document.createElement('br'));
+      candidatesDiv.appendChild(document.createElement('br'));
+    });
+  </script>
+</body>
+</html>

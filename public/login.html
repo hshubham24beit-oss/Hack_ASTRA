@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Login - VoteChain</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <nav class="navbar">
+      <a href="index.html" class="brand">🏛️ VoteChain</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="login-box">
+      <h1>Login</h1>
+      <form id="loginForm">
+        <input type="email" id="email" placeholder="Email ID" required><br><br>
+        <input type="password" id="password" placeholder="Password" required><br><br>
+        <select id="role" required>
+          <option value="">-- Select Role --</option>
+          <option value="admin">Admin</option>
+          <option value="voter">Voter</option>
+          <option value="results">View Results</option>
+        </select><br><br>
+        <button type="submit">Login</button>
+      </form>
+      <p id="error" class="error"></p>
+    </div>
+  </main>
+
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const pass = document.getElementById('password').value;
+      const role = document.getElementById('role').value;
+
+      // Simple fixed demo logins (you can change emails & passwords here)
+      if (email === 'admin@gmail.com' && pass === '123' && role === 'admin') {
+        window.location.href = 'admin.html';
+      } else if (email === 'voter@gmail.com' && pass === '123' && role === 'voter') {
+        window.location.href = 'voter.html';
+      } else if (email === 'results@gmail.com' && pass === '123' && role === 'results') {
+        window.location.href = 'results';
+      } else {
+        document.getElementById('error').innerText = 'Invalid email or password!';
+      }
+    });
+  </script>
+</body>
+</html>

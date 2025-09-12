@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Voter - VoteChain</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <nav class="navbar">
+      <a href="index.html" class="brand">🏛️ VoteChain</a>
+      <div class="nav-links">
+        <a href="admin.html">Admin Panel</a>
+        <a href="voter.html">Voter Panel</a>
+        <a href="/results">View Results</a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <h1>Voter: Cast Your Vote</h1>
+    <form action="/cast-vote" method="POST">
+      <input type="text" name="voterId" placeholder="Your ID (e.g. V123)" required><br><br>
+
+      <select name="candidate" id="candidateSelect" required>
+        <option value="">-- Select Candidate --</option>
+      </select><br><br>
+
+      <button type="submit">Vote</button>
+    </form>
+    <p><a href="/">Home</a></p>
+  </main>
+
+  <script>
+    // Fetch candidates from server
+    fetch('/election-data')
+      .then(res => res.json())
+      .then(data => {
+        const select = document.getElementById('candidateSelect');
+        if (data.candidates && data.candidates.length > 0) {
+          data.candidates.forEach(name => {
+            const opt = document.createElement('option');
+            opt.value = name;
+            opt.textContent = name;
+            select.appendChild(opt);
+          });
+        }
+      });
+  </script>
+</body>
+</html>

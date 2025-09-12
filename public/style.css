@@ -1,0 +1,258 @@
+/* General Page Styling */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f4f8fc;
+  color: #333;
+  text-align: center;
+}/* General Page Styling */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f4f8fc;
+  color: #333;
+  text-align: center;
+}
+
+/* Header & Navbar */
+header {
+  background: #1565C0;
+  padding: 12px 0;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.navbar {
+  width: 90%;
+  margin: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.brand {
+  font-size: 22px;
+  color: #fff;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.nav-links a {
+  margin: 0 12px;
+  color: #fff;
+  text-decoration: none;
+  font-size: 16px;
+}
+
+.nav-links a:hover {
+  text-decoration: underline;
+}
+
+/* Main content */
+main {
+  padding: 60px 20px;
+}
+
+h1 {
+  color: #1565C0;
+  font-size: 36px;
+  margin-bottom: 10px;
+}
+
+p {
+  font-size: 18px;
+  color: #444;
+}
+
+
+/* Header & Navbar */
+header {
+  background: #1565C0;
+  padding: 12px 0;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.navbar {
+  width: 90%;
+  margin: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.brand {
+  font-size: 22px;
+  color: #fff;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.nav-links a {
+  margin: 0 12px;
+  color: #fff;
+  text-decoration: none;
+  font-size: 16px;
+}
+
+.nav-links a:hover {
+  text-decoration: underline;
+}
+
+/* Main content */
+main {
+  padding: 60px 20px;
+}
+
+h1 {
+  color: #1565C0;
+  font-size: 36px;
+  margin-bottom: 10px;
+}
+
+p {
+  font-size: 18px;
+  color: #444;
+}
+
+
+/* Results Page Styling */
+.results-box {
+  display: inline-block;
+  text-align: left;
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  margin-bottom: 30px;
+}
+
+.results-box .candidate {
+  font-size: 18px;
+  margin: 6px 0;
+  padding: 6px 10px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.ledger {
+  text-align: left;
+  display: inline-block;
+  background: #fafafa;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: inset 0 0 4px rgba(0,0,0,0.1);
+  max-width: 90%;
+  overflow-x: auto;
+}
+
+
+
+/* Login Page */
+.login-box {
+  background: #fff;
+  padding: 40px;
+  border-radius: 10px;
+  width: 320px;
+  margin: 60px auto;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.login-box h1 {
+  color: #1565C0;
+  margin-bottom: 20px;
+}
+
+.login-box input, .login-box select {
+  width: 90%;
+  padding: 10px;
+  margin-bottom: 10px;
+  border: 1px solid #bbb;
+  border-radius: 6px;
+}
+
+.login-box button {
+  width: 95%;
+  padding: 10px;
+  background: #1565C0;
+  border: none;
+  color: white;
+  font-size: 16px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.login-box button:hover {
+  background: #0d47a1;
+}
+
+.error {
+  color: red;
+  margin-top: 10px;
+}
+
+
+/* Result / Response message box after clicking buttons */
+.result-message, .vote-message {
+  margin: 30px auto;
+  padding: 20px 25px;
+  width: 60%;
+  max-width: 500px;
+  text-align: center;
+  font-size: 1.2rem;
+  color: #333;
+  background: #f1f9ff;
+  border: 2px solid #0077cc;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  animation: fadeIn 0.4s ease;
+}
+
+/* Success/Fail colors */
+.success {
+  border-color: #28a745;
+  background: #e7f9ed;
+  color: #155724;
+}
+
+.error {
+  border-color: #dc3545;
+  background: #fdecea;
+  color: #721c24;
+}
+
+/* Small fade animation */
+@keyframes fadeIn {
+  from {opacity: 0; transform: translateY(10px);}
+  to {opacity: 1; transform: translateY(0);}
+}
+
+.result-message {
+  margin: 50px auto;
+  padding: 25px;
+  width: 80%;
+  max-width: 500px;
+  text-align: center;
+  font-size: 1.2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.result-message.success {
+  background: #e7f9ed;
+  border: 2px solid #28a745;
+  color: #155724;
+}
+
+.result-message.error {
+  background: #fdecea;
+  border: 2px solid #dc3545;
+  color: #721c24;
+}
+
+.result-message a {
+  display:inline-block;
+  margin-top:15px;
+  color:#0077cc;
+  text-decoration:none;
+  font-weight:bold;
+}
+
