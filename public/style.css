@@ -256,3 +256,73 @@ p {
   font-weight:bold;
 }
 
+
+
+/* Navbar */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 40px;
+  background: #0077cc;
+  color: #fff;
+}
+.navbar .brand {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+.navbar .nav-link {
+  color: #fff;
+  text-decoration: none;
+  margin-left: 20px;
+  font-weight: 500;
+}
+.navbar .nav-link:hover {
+  text-decoration: underline;
+}
+
+/* Hero section */
+.hero {
+  text-align: center;
+  padding: 100px 20px;
+  background: linear-gradient(135deg, #e0f2ff, #ffffff);
+}
+.hero h1 {
+  font-size: 2.5rem;
+  margin-bottom: 15px;
+  color: #004b8d;
+}
+.hero p {
+  font-size: 1.2rem;
+  color: #333;
+  margin-bottom: 40px;
+}
+
+/* Buttons */
+.button-group .btn {
+  display: inline-block;
+  background: #0077cc;
+  color: #fff;
+  text-decoration: none;
+  padding: 12px 25px;
+  border-radius: 30px;
+  margin: 10px;
+  transition: all 0.2s ease;
+}
+.button-group .btn.secondary {
+  background: #28a745;
+}
+.button-group .btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+/* Footer */
+footer {
+  text-align: center;
+  padding: 25px;
+  background: #f1f1f1;
+  color: #666;
+  font-size: 0.9rem;
+  margin-top: 50px;
+}
