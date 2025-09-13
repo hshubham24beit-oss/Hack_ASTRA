@@ -2,51 +2,165 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Admin - VoteChain</title>
+  <title>Admin Panel - VoteChain</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      padding: 20px;
+    }
+    h1 { text-align: center; }
+    .container {
+      max-width: 700px;
+      margin: auto;
+      background: #fff;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .candidate-field {
+      display: flex;
+      gap: 10px;
+      margin: 5px 0;
+    }
+    .candidate-field input {
+      flex: 1;
+      padding: 8px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    .remove-btn {
+      background: #f44336;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      padding: 0 10px;
+    }
+    .add-btn {
+      background: #2196F3;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      display: inline-block;
+      margin: 10px 0;
+    }
+    .create-btn {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 6px;
+      width: 100%;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    .election-list { margin-top: 30px; }
+    .election-item {
+      border: 1px solid #ddd;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 6px;
+      background: #fafafa;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .publish-btn {
+      background: #2196F3;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .publish-btn:disabled {
+      background: gray;
+      cursor: not-allowed;
+    }
+  </style>
 </head>
 <body>
-  <header>
-    <nav class="navbar">
-      <a href="index.html" class="brand">🏛️ VoteChain</a>
-      <div class="nav-links">
-        <a href="admin.html">Admin Panel</a>
-        <a href="voter.html">Voter Panel</a>
-        <a href="/results">View Results</a>
-      </div>
-    </nav>
-  </header>
 
-  <main>
-    <h1>Admin: Create Election</h1>
-    <form id="electionForm" action="/create-election" method="POST">
-      <input type="text" name="title" placeholder="Election Title" required><br><br>
-      
-      <div id="candidates">
-        <input type="text" name="candidates" placeholder="Candidate Name" required><br><br>
-        <input type="text" name="candidates" placeholder="Candidate Name" required><br><br>
+  <h1>🛡️ Admin Panel</h1>
+  <div class="container">
+    <h2>Create New Election</h2>
+    <form method="POST" action="/create-election" id="createElectionForm">
+      <input type="text" name="title" placeholder="Election Title" required>
+
+      <div id="candidatesContainer">
+        <div class="candidate-field">
+          <input type="text" name="candidates" placeholder="Candidate Name" required>
+          <button type="button" class="remove-btn" onclick="removeCandidate(this)">×</button>
+        </div>
       </div>
 
-      <button type="button" id="addCandidateBtn">+ Add Candidate</button><br><br>
-      <button type="submit">Create Election</button>
+      <button type="button" class="add-btn" onclick="addCandidate()">+ Add Another Candidate</button>
+      <button type="submit" class="create-btn">Create Election</button>
     </form>
-    <p><a href="/">Home</a></p>
-  </main>
+
+    <div class="election-list">
+      <h2>Existing Elections</h2>
+      <div id="electionsContainer">Loading elections...</div>
+    </div>
+  </div>
 
   <script>
-    const addBtn = document.getElementById('addCandidateBtn');
-    const candidatesDiv = document.getElementById('candidates');
+    function addCandidate() {
+      const container = document.getElementById("candidatesContainer");
+      const div = document.createElement("div");
+      div.className = "candidate-field";
+      div.innerHTML = `
+        <input type="text" name="candidates" placeholder="Candidate Name" required>
+        <button type="button" class="remove-btn" onclick="removeCandidate(this)">×</button>
+      `;
+      container.appendChild(div);
+    }
 
-    addBtn.addEventListener('click', () => {
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.name = 'candidates';
-      input.placeholder = 'Candidate Name';
-      input.required = true;
-      candidatesDiv.appendChild(input);
-      candidatesDiv.appendChild(document.createElement('br'));
-      candidatesDiv.appendChild(document.createElement('br'));
-    });
+    function removeCandidate(btn) {
+      btn.parentElement.remove();
+    }
+
+    function loadElections() {
+      fetch("/elections")
+        .then(res => res.json())
+        .then(data => {
+          const container = document.getElementById("electionsContainer");
+          if (data.length === 0) {
+            container.innerHTML = "<p>No elections created yet.</p>";
+            return;
+          }
+          container.innerHTML = "";
+          data.forEach(e => {
+            const div = document.createElement("div");
+            div.className = "election-item";
+            div.innerHTML = `
+              <div>
+                <strong>${e.title}</strong><br>
+                Candidates: ${e.candidates.join(", ")}<br>
+                Status: ${e.published ? "✅ Published" : "🕒 Not Published"}
+              </div>
+              <button class="publish-btn" ${e.published ? "disabled" : ""} onclick="publish('${e.id}')">
+                Publish Results
+              </button>
+            `;
+            container.appendChild(div);
+          });
+        });
+    }
+
+    function publish(id) {
+      fetch("/publish-results/" + id, { method: "POST" })
+        .then(() => {
+          alert("Results published successfully!");
+          loadElections();
+        });
+    }
+
+    loadElections();
   </script>
 </body>
 </html>

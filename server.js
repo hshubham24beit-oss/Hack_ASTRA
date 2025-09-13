@@ -1,30 +1,24 @@
-// server.js
 const express = require("express");
 const bodyParser = require("body-parser");
 const path = require("path");
 const { Block, Blockchain } = require("./blockchain");
 
-// Create app
 const app = express();
 const PORT = 3000;
 
-// Middleware
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// In-memory data
 let voteChain = new Blockchain();
-let elections = []; // <- store multiple elections
+let elections = [];
 
-// ========================== ROUTES ==========================
-
-// Get all elections for voter panel
+// Get all elections for voter panel (only titles + ids, not votes)
 app.get("/elections", (req, res) => {
-  res.json(elections);
+  res.json(elections.map(e => ({ id: e.id, title: e.title, candidates: e.candidates, published: e.published })));
 });
 
-// Homepage
+// Home page
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
@@ -39,29 +33,22 @@ app.post("/create-election", (req, res) => {
   }
 
   if (!Array.isArray(candidates)) candidates = [candidates];
-  candidates = candidates.map(c => String(c).trim()).filter(c => c);
-
-  if (candidates.length === 0) {
-    return res.send("Please provide valid candidate names");
-  }
+  candidates = candidates.map(c => c.trim()).filter(c => c);
 
   const newElection = {
     id: Date.now().toString(),
     title,
     candidates,
-    votes: {}
+    votes: Object.fromEntries(candidates.map(c => [c, 0])),
+    published: false  // 👈 initially not published
   };
-
-  candidates.forEach(c => (newElection.votes[c] = 0));
 
   elections.push(newElection);
 
   res.send(`
-    <!DOCTYPE html>
-    <html>
-    <head>
+    <html><head>
       <meta charset="utf-8">
-      <title>Success - VoteChain</title>
+      <title>Created</title>
       <link rel="stylesheet" href="/style.css">
       <meta http-equiv="refresh" content="2;url=/" />
     </head>
@@ -70,8 +57,7 @@ app.post("/create-election", (req, res) => {
         ✅ Election "<strong>${title}</strong>" created successfully!
         <br><br><a href="/">Go Back</a>
       </div>
-    </body>
-    </html>
+    </body></html>
   `);
 });
 
@@ -80,13 +66,8 @@ app.post("/cast-vote", (req, res) => {
   const { voterId, candidate, electionId } = req.body;
 
   const election = elections.find(e => e.id === electionId);
-  if (!election) {
-    return res.send("Invalid election selected");
-  }
-
-  if (!election.candidates.includes(candidate)) {
-    return res.send("Invalid candidate for selected election");
-  }
+  if (!election) return res.send("Invalid election selected");
+  if (!election.candidates.includes(candidate)) return res.send("Invalid candidate");
 
   election.votes[candidate] += 1;
 
@@ -98,35 +79,79 @@ app.post("/cast-vote", (req, res) => {
   );
   voteChain.addBlock(newBlock);
 
+  // ❌ No view results link here
   res.send(`
-    <!doctype html><html><head>
-      <meta charset="utf-8"><title>Vote Cast - VoteChain</title>
+    <html><head>
+      <meta charset="utf-8">
+      <title>Vote Cast</title>
       <link rel="stylesheet" href="/style.css">
-      <meta http-equiv="refresh" content="3;url=/results" />
-    </head><body>
+      <meta http-equiv="refresh" content="2;url=/" />
+    </head>
+    <body>
       <div class="vote-message success">
-        <div>✅ Your vote for <strong>${candidate}</strong> in <strong>${election.title}</strong> is recorded.</div>
-        <a href="/results">View Results</a>
+        ✅ Your vote for <strong>${candidate}</strong> in <strong>${election.title}</strong> is recorded.
+        <br><br><a href="/">Back to Home</a>
       </div>
     </body></html>
   `);
 });
 
-// View results of all elections
+// Admin publishes election results
+app.post("/publish-results/:id", (req, res) => {
+  const election = elections.find(e => e.id === req.params.id);
+  if (!election) return res.send("Election not found");
+  election.published = true;
+
+  res.send(`
+    <html><head>
+      <meta charset="utf-8">
+      <title>Published</title>
+      <link rel="stylesheet" href="/style.css">
+      <meta http-equiv="refresh" content="2;url=/" />
+    </head>
+    <body>
+      <div class="result-message success">
+        📢 Results for "<strong>${election.title}</strong>" have been published.
+        <br><br><a href="/">Go Back</a>
+      </div>
+    </body></html>
+  `);
+});
+
+// Results page (shows only published elections)
 app.get("/results", (req, res) => {
-  const allResults = elections.length
-    ? elections
-        .map(
-          e => `
-          <div class="election">
-            <h3>${e.title}</h3>
-            ${e.candidates
-              .map(c => `<div>${c}: ${e.votes[c]}</div>`)
-              .join("")}
-          </div>`
-        )
-        .join("")
-    : "<p>No elections created yet</p>";
+  const published = elections.filter(e => e.published);
+
+  if (!published.length) {
+    return res.send(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Results - VoteChain</title>
+        <link rel="stylesheet" href="/style.css">
+      </head>
+      <body class="no-results">
+        <h2>No results are published yet.</h2>
+        <a href="/" class="back-link">🏠 Back to Home</a>
+      </body>
+      </html>
+    `);
+  }
+
+  const allResults = published.map(e => `
+    <div class="election-card">
+      <h3>${e.title}</h3>
+      <div class="candidate-list">
+        ${e.candidates.map(c => `
+          <div class="candidate">
+            <span>${c}</span>
+            <span class="vote-count">${e.votes[c]} votes</span>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  `).join("");
 
   res.send(`
     <!DOCTYPE html>
@@ -134,38 +159,29 @@ app.get("/results", (req, res) => {
     <head>
       <meta charset="utf-8">
       <title>Results - VoteChain</title>
-      <link rel="stylesheet" href="style.css">
+      <link rel="stylesheet" href="/style.css">
     </head>
     <body>
-      <header>
-        <nav class="navbar">
-          <a href="index.html" class="brand">🏛️ VoteChain</a>
-          <div class="nav-links">
-            <a href="admin.html">Admin Panel</a>
-            <a href="voter.html">Voter Panel</a>
-            <a href="/results">View Results</a>
-          </div>
-        </nav>
+      <header class="navbar">
+        <div class="brand">🏛️ VoteChain</div>
+        <div class="nav-links">
+          <a href="/">Home</a>
+          <a href="admin.html">Admin Panel</a>
+          <a href="voter.html">Voter Panel</a>
+        </div>
       </header>
 
-      <main>
-        <h1>All Election Results</h1>
-        <div class="results-box">
-          ${allResults}
-        </div>
+      <div class="content">
+        <h1>📢 Published Election Results</h1>
+        ${allResults}
         <h2>Blockchain Ledger</h2>
         <pre class="ledger">${JSON.stringify(voteChain.chain, null, 2)}</pre>
-        <p><a href="/">🏠 Back to Home</a></p>
-      </main>
+        <a href="/" class="back-link">🏠 Back to Home</a>
+      </div>
     </body>
     </html>
   `);
 });
 
-// redirect /admin.html to homepage (optional)
-app.get("/admin.html", (req, res) => res.redirect("/"));
-
 // Start server
-app.listen(PORT, () =>
-  console.log(`Server running on http://localhost:${PORT}`)
-);
+app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
