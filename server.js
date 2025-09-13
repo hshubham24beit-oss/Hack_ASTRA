@@ -4,54 +4,57 @@ const bodyParser = require("body-parser");
 const path = require("path");
 const { Block, Blockchain } = require("./blockchain");
 
-// ✅ create express app first
+// Create app
 const app = express();
 const PORT = 3000;
 
-// ✅ middleware
-app.use(bodyParser.urlencoded({ extended: true }));
+// Middleware
 app.use(express.static(path.join(__dirname, "public")));
+app.use(express.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
-// In-memory blockchain + election data
+// In-memory data
 let voteChain = new Blockchain();
-let election = { title: "", candidates: [] };
-let votes = {};
+let elections = []; // <- store multiple elections
 
-// Home page
+// ========================== ROUTES ==========================
+
+// Get all elections for voter panel
+app.get("/elections", (req, res) => {
+  res.json(elections);
+});
+
+// Homepage
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
 // Admin creates election
-// Admin creates election (styled response)
 app.post("/create-election", (req, res) => {
   const title = req.body.title;
   let candidates = req.body.candidates;
 
   if (!title || !candidates) {
-    return res.send(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <title>Create Election - VoteChain</title>
-        <link rel="stylesheet" href="/style.css">
-      </head>
-      <body>
-        <div class="result-message error">
-          ❌ Please provide election title and candidates
-          <br><br>
-          <a href="/">Go Back</a>
-        </div>
-      </body>
-      </html>
-    `);
+    return res.send("Please provide title and candidates");
   }
 
   if (!Array.isArray(candidates)) candidates = [candidates];
-  election = { title, candidates };
-  votes = {};
-  candidates.forEach(c => votes[c] = 0);
+  candidates = candidates.map(c => String(c).trim()).filter(c => c);
+
+  if (candidates.length === 0) {
+    return res.send("Please provide valid candidate names");
+  }
+
+  const newElection = {
+    id: Date.now().toString(),
+    title,
+    candidates,
+    votes: {}
+  };
+
+  candidates.forEach(c => (newElection.votes[c] = 0));
+
+  elections.push(newElection);
 
   res.send(`
     <!DOCTYPE html>
@@ -60,12 +63,12 @@ app.post("/create-election", (req, res) => {
       <meta charset="utf-8">
       <title>Success - VoteChain</title>
       <link rel="stylesheet" href="/style.css">
+      <meta http-equiv="refresh" content="2;url=/" />
     </head>
     <body>
       <div class="result-message success">
         ✅ Election "<strong>${title}</strong>" created successfully!
-        <br><br>
-        <a href="/">Go Back</a>
+        <br><br><a href="/">Go Back</a>
       </div>
     </body>
     </html>
@@ -73,73 +76,57 @@ app.post("/create-election", (req, res) => {
 });
 
 // Voter casts vote
-// Voter casts vote (styled response)
 app.post("/cast-vote", (req, res) => {
-  const { voterId, candidate } = req.body;
+  const { voterId, candidate, electionId } = req.body;
 
-  if (!election.title) {
-    return res.send(`
-      <!doctype html><html><head>
-        <meta charset="utf-8"><title>No Election - VoteChain</title>
-        <link rel="stylesheet" href="/style.css">
-        <meta http-equiv="refresh" content="4;url=/" />
-      </head><body>
-        <div class="vote-message error">
-          <div><strong>Error:</strong> No active election. Ask admin to create one.</div>
-          <a href="/">Go Back</a>
-        </div>
-      </body></html>
-    `);
+  const election = elections.find(e => e.id === electionId);
+  if (!election) {
+    return res.send("Invalid election selected");
   }
 
   if (!election.candidates.includes(candidate)) {
-    return res.send(`
-      <!doctype html><html><head>
-        <meta charset="utf-8"><title>Invalid Candidate - VoteChain</title>
-        <link rel="stylesheet" href="/style.css">
-        <meta http-equiv="refresh" content="4;url=/voter.html" />
-      </head><body>
-        <div class="vote-message error">
-          <div><strong>Error:</strong> Invalid candidate selected.</div>
-          <a href="/voter.html">Choose Again</a>
-        </div>
-      </body></html>
-    `);
+    return res.send("Invalid candidate for selected election");
   }
 
-  // record vote
-  votes[candidate] = (votes[candidate] || 0) + 1;
+  election.votes[candidate] += 1;
 
   const newBlock = new Block(
     voteChain.chain.length,
     Date.now().toString(),
-    { voterId: voterId || "anon", candidate },
+    { voterId: voterId || "anon", candidate, election: election.title },
     voteChain.getLatestBlock().hash
   );
   voteChain.addBlock(newBlock);
 
-  // styled success response, with link to results (auto-redirect after 4s)
   res.send(`
     <!doctype html><html><head>
       <meta charset="utf-8"><title>Vote Cast - VoteChain</title>
       <link rel="stylesheet" href="/style.css">
-      <meta http-equiv="refresh" content="4;url=/results" />
+      <meta http-equiv="refresh" content="3;url=/results" />
     </head><body>
       <div class="vote-message success">
-        <div>✅ Your vote for <strong>${candidate}</strong> has been recorded.</div>
-        <a href="/results">View Results Now</a>
+        <div>✅ Your vote for <strong>${candidate}</strong> in <strong>${election.title}</strong> is recorded.</div>
+        <a href="/results">View Results</a>
       </div>
     </body></html>
   `);
 });
 
-
-// View results
-// View results with styled HTML
+// View results of all elections
 app.get("/results", (req, res) => {
-  const candidateResults = election.candidates.length
-    ? election.candidates.map(c => `<div class="candidate"><strong>${c}</strong>: ${votes[c]}</div>`).join("")
-    : "<p>No candidates</p>";
+  const allResults = elections.length
+    ? elections
+        .map(
+          e => `
+          <div class="election">
+            <h3>${e.title}</h3>
+            ${e.candidates
+              .map(c => `<div>${c}: ${e.votes[c]}</div>`)
+              .join("")}
+          </div>`
+        )
+        .join("")
+    : "<p>No elections created yet</p>";
 
   res.send(`
     <!DOCTYPE html>
@@ -162,9 +149,9 @@ app.get("/results", (req, res) => {
       </header>
 
       <main>
-        <h1>Election Results: ${election.title || "No election created yet"}</h1>
+        <h1>All Election Results</h1>
         <div class="results-box">
-          ${candidateResults}
+          ${allResults}
         </div>
         <h2>Blockchain Ledger</h2>
         <pre class="ledger">${JSON.stringify(voteChain.chain, null, 2)}</pre>
@@ -175,17 +162,10 @@ app.get("/results", (req, res) => {
   `);
 });
 
+// redirect /admin.html to homepage (optional)
+app.get("/admin.html", (req, res) => res.redirect("/"));
 
 // Start server
-// Send current election data as JSON
-app.get("/election-data", (req, res) => {
-  res.json(election);
-});
-
-// Redirect admin.html link to homepage
-app.get("/admin.html", (req, res) => {
-  res.redirect("/");
-});
-
-
-app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+app.listen(PORT, () =>
+  console.log(`Server running on http://localhost:${PORT}`)
+);

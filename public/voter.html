@@ -2,49 +2,103 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Voter - VoteChain</title>
+  <title>Voter Panel - VoteChain</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f3f3f3;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    .container {
+      max-width: 600px;
+      background: #fff;
+      padding: 25px;
+      margin: 20px auto;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    label {
+      font-weight: bold;
+    }
+    select, input, button {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background: #4CAF50;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #45a049;
+    }
+  </style>
 </head>
 <body>
-  <header>
-    <nav class="navbar">
-      <a href="index.html" class="brand">🏛️ VoteChain</a>
-      <div class="nav-links">
-        <a href="admin.html">Admin Panel</a>
-        <a href="voter.html">Voter Panel</a>
-        <a href="/results">View Results</a>
-      </div>
-    </nav>
-  </header>
+  <h1>🗳️ Voter Panel</h1>
 
-  <main>
-    <h1>Voter: Cast Your Vote</h1>
-    <form action="/cast-vote" method="POST">
-      <input type="text" name="voterId" placeholder="Your ID (e.g. V123)" required><br><br>
+  <div class="container">
+    <form id="voteForm" method="POST" action="/cast-vote">
+      <label for="voterId">Enter your Voter ID</label>
+      <input type="text" name="voterId" id="voterId" required>
 
+      <label for="electionSelect">Select Election</label>
+      <select name="electionId" id="electionSelect" required>
+        <option value="">Loading elections...</option>
+      </select>
+
+      <label for="candidateSelect">Select Candidate</label>
       <select name="candidate" id="candidateSelect" required>
-        <option value="">-- Select Candidate --</option>
-      </select><br><br>
+        <option value="">Select an election first</option>
+      </select>
 
       <button type="submit">Vote</button>
     </form>
-    <p><a href="/">Home</a></p>
-  </main>
+  </div>
 
   <script>
-    // Fetch candidates from server
-    fetch('/election-data')
+    const electionSelect = document.getElementById("electionSelect");
+    const candidateSelect = document.getElementById("candidateSelect");
+
+    // Load all elections from the server
+    fetch("/elections")
       .then(res => res.json())
       .then(data => {
-        const select = document.getElementById('candidateSelect');
-        if (data.candidates && data.candidates.length > 0) {
-          data.candidates.forEach(name => {
-            const opt = document.createElement('option');
-            opt.value = name;
-            opt.textContent = name;
-            select.appendChild(opt);
-          });
-        }
+        electionSelect.innerHTML = '<option value="">-- Choose an election --</option>';
+        data.forEach(e => {
+          const opt = document.createElement("option");
+          opt.value = e.id;
+          opt.textContent = e.title;
+          electionSelect.appendChild(opt);
+        });
+
+        // update candidates when election changes
+        electionSelect.addEventListener("change", () => {
+          const selected = data.find(e => e.id === electionSelect.value);
+          candidateSelect.innerHTML = "";
+          if (selected) {
+            selected.candidates.forEach(c => {
+              const opt = document.createElement("option");
+              opt.value = c;
+              opt.textContent = c;
+              candidateSelect.appendChild(opt);
+            });
+          } else {
+            candidateSelect.innerHTML = '<option value="">Select an election first</option>';
+          }
+        });
+      })
+      .catch(() => {
+        electionSelect.innerHTML = '<option>Error loading elections</option>';
       });
   </script>
 </body>
