@@ -13,17 +13,75 @@ app.use(bodyParser.urlencoded({ extended: true }));
 let voteChain = new Blockchain();
 let elections = [];
 
-// Get all elections for voter panel (only titles + ids, not votes)
-app.get("/elections", (req, res) => {
-  res.json(elections.map(e => ({ id: e.id, title: e.title, candidates: e.candidates, published: e.published })));
+// 🧠 In-memory voter store { email: { password, voterId } }
+let registeredVoters = {};
+
+// Generate random voterId
+function generateVoterId() {
+  return "VOTER-" + Math.random().toString(36).substring(2, 10).toUpperCase();
+}
+
+/* ==========================================================
+   LOGIN ROUTE — checks email & password and gives voterId
+   ========================================================== */
+app.post("/login", (req, res) => {
+  const { email, password, role } = req.body;
+
+  // Admin and Results demo logins
+  if (role === "admin" && email === "admin@gmail.com" && password === "123") {
+    return res.json({ success: true, role: "admin" });
+  }
+  if (role === "results" && email === "results@gmail.com" && password === "123") {
+    return res.json({ success: true, role: "results" });
+  }
+
+  // Voter login
+  if (role === "voter") {
+    if (!email || !password) {
+      return res.json({ success: false, message: "Email and password are required" });
+    }
+
+    const existing = registeredVoters[email];
+    if (!existing) {
+      // First time login → register this voter
+      const newVoterId = generateVoterId();
+      registeredVoters[email] = { password, voterId: newVoterId };
+      return res.json({ success: true, role: "voter", voterId: newVoterId });
+    } else {
+      // Already registered → must match password
+      if (existing.password === password) {
+        return res.json({ success: true, role: "voter", voterId: existing.voterId });
+      } else {
+        return res.json({ success: false, message: "Wrong password for this email" });
+      }
+    }
+  }
+
+  return res.json({ success: false, message: "Invalid credentials" });
 });
 
-// Home page
+/* ==========================================================
+   GET all elections (for voter panel)
+   ========================================================== */
+app.get("/elections", (req, res) => {
+  res.json(elections.map(e => ({
+    id: e.id,
+    title: e.title,
+    candidates: e.candidates,
+    published: e.published
+  })));
+});
+
+/* ==========================================================
+   Home page
+   ========================================================== */
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// Admin creates election
+/* ==========================================================
+   Admin creates election
+   ========================================================== */
 app.post("/create-election", (req, res) => {
   const title = req.body.title;
   let candidates = req.body.candidates;
@@ -32,25 +90,27 @@ app.post("/create-election", (req, res) => {
     return res.send("Please provide title and candidates");
   }
 
-  if (!Array.isArray(candidates)) candidates = [candidates];
-  candidates = candidates.map(c => c.trim()).filter(c => c);
+  if (!Array.isArray(candidates)) {
+    candidates = candidates.split(",").map(c => c.trim());
+  }
 
   const newElection = {
     id: Date.now().toString(),
     title,
     candidates,
-    votes: Object.fromEntries(candidates.map(c => [c, 0])),
-    published: false  // 👈 initially not published
+    votes: {},
+    voted: [],
+    published: false
   };
 
+  candidates.forEach(c => newElection.votes[c] = 0);
   elections.push(newElection);
 
   res.send(`
-    <html><head>
-      <meta charset="utf-8">
-      <title>Created</title>
-      <link rel="stylesheet" href="/style.css">
-      <meta http-equiv="refresh" content="2;url=/" />
+    <!DOCTYPE html>
+    <html><head><meta charset="utf-8">
+    <title>Success - VoteChain</title>
+    <link rel="stylesheet" href="/style.css">
     </head>
     <body>
       <div class="result-message success">
@@ -61,33 +121,62 @@ app.post("/create-election", (req, res) => {
   `);
 });
 
-// Voter casts vote
-app.post("/cast-vote", (req, res) => {
+/* ==========================================================
+   Voter casts vote
+   ========================================================== */
+app.post('/cast-vote', (req, res) => {
   const { voterId, candidate, electionId } = req.body;
 
-  const election = elections.find(e => e.id === electionId);
-  if (!election) return res.send("Invalid election selected");
-  if (!election.candidates.includes(candidate)) return res.send("Invalid candidate");
+  if (!voterId) {
+    return res.send(`<div class="vote-message error">No voter ID provided. Please login first. <a href="/login.html">Login</a></div>`);
+  }
 
-  election.votes[candidate] += 1;
+  const election = elections.find(e => e.id === electionId);
+  if (!election) {
+    return res.send(`<div class="vote-message error">Invalid election selected. <a href="/voter.html">Back</a></div>`);
+  }
+
+  if (election.voted.includes(voterId)) {
+    return res.send(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Vote Error</title>
+        <link rel="stylesheet" href="/style.css">
+      </head>
+      <body>
+        <div class="error-box">
+          <h1>⚠️ Already Voted</h1>
+          <p>You have already cast your vote in "<strong>${election.title}</strong>".</p>
+          <a href="/voter.html" class="back-btn">Back to Voter Panel</a>
+        </div>
+      </body>
+      </html>
+    `);
+  }
+
+  if (!election.candidates.includes(candidate)) {
+    return res.send(`<div class="vote-message error">Invalid candidate. <a href="/voter.html">Choose again</a></div>`);
+  }
+
+  election.votes[candidate] = (election.votes[candidate] || 0) + 1;
+  election.voted.push(voterId);
 
   const newBlock = new Block(
     voteChain.chain.length,
     Date.now().toString(),
-    { voterId: voterId || "anon", candidate, election: election.title },
+    { voterId: voterId, candidate, election: election.title },
     voteChain.getLatestBlock().hash
   );
   voteChain.addBlock(newBlock);
 
-  // ❌ No view results link here
   res.send(`
-    <html><head>
-      <meta charset="utf-8">
-      <title>Vote Cast</title>
+    <!doctype html><html><head>
+      <meta charset="utf-8"><title>Vote Cast</title>
       <link rel="stylesheet" href="/style.css">
-      <meta http-equiv="refresh" content="2;url=/" />
-    </head>
-    <body>
+      <meta http-equiv="refresh" content="3;url=/" />
+    </head><body>
       <div class="vote-message success">
         ✅ Your vote for <strong>${candidate}</strong> in <strong>${election.title}</strong> is recorded.
         <br><br><a href="/">Back to Home</a>
@@ -96,7 +185,9 @@ app.post("/cast-vote", (req, res) => {
   `);
 });
 
-// Admin publishes election results
+/* ==========================================================
+   Admin publishes election results
+   ========================================================== */
 app.post("/publish-results/:id", (req, res) => {
   const election = elections.find(e => e.id === req.params.id);
   if (!election) return res.send("Election not found");
@@ -118,7 +209,9 @@ app.post("/publish-results/:id", (req, res) => {
   `);
 });
 
-// Results page (shows only published elections)
+/* ==========================================================
+   Results page
+   ========================================================== */
 app.get("/results", (req, res) => {
   const published = elections.filter(e => e.published);
 
@@ -183,5 +276,5 @@ app.get("/results", (req, res) => {
   `);
 });
 
-// Start server
+/* ========================================================== */
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));

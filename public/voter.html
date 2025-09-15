@@ -14,6 +14,13 @@
       text-align: center;
       color: #333;
     }
+    .voter-info {
+      text-align: center;
+      margin-top: 10px;
+      font-size: 18px;
+      color: #0077cc;
+      font-weight: bold;
+    }
     .container {
       max-width: 600px;
       background: #fff;
@@ -25,7 +32,7 @@
     label {
       font-weight: bold;
     }
-    select, input, button {
+    select, button {
       width: 100%;
       padding: 10px;
       margin: 10px 0;
@@ -45,19 +52,17 @@
 </head>
 <body>
   <h1>🗳️ Voter Panel</h1>
+  <div class="voter-info" id="voterInfo">Loading your voter ID...</div>
 
   <div class="container">
-    <form id="voteForm" method="POST" action="/cast-vote">
-      <label for="voterId">Enter your Voter ID</label>
-      <input type="text" name="voterId" id="voterId" required>
-
+    <form id="voteForm">
       <label for="electionSelect">Select Election</label>
-      <select name="electionId" id="electionSelect" required>
+      <select id="electionSelect" required>
         <option value="">Loading elections...</option>
       </select>
 
       <label for="candidateSelect">Select Candidate</label>
-      <select name="candidate" id="candidateSelect" required>
+      <select id="candidateSelect" required>
         <option value="">Select an election first</option>
       </select>
 
@@ -66,40 +71,65 @@
   </div>
 
   <script>
-    const electionSelect = document.getElementById("electionSelect");
-    const candidateSelect = document.getElementById("candidateSelect");
+    const voterId = localStorage.getItem('voterId');
+    if (!voterId) {
+      alert('You must login first.');
+      window.location.href = '/login.html';
+    }
 
-    // Load all elections from the server
+    // ✅ Show voter ID
+    document.getElementById('voterInfo').innerText = `Welcome, your Voter ID is: ${voterId}`;
+
+    const electionSelect = document.getElementById('electionSelect');
+    const candidateSelect = document.getElementById('candidateSelect');
+    const voterForm = document.getElementById('voteForm');
+
+    // Load all elections
     fetch("/elections")
       .then(res => res.json())
       .then(data => {
-        electionSelect.innerHTML = '<option value="">-- Choose an election --</option>';
-        data.forEach(e => {
-          const opt = document.createElement("option");
-          opt.value = e.id;
-          opt.textContent = e.title;
-          electionSelect.appendChild(opt);
-        });
+        if (!data.length) {
+          electionSelect.innerHTML = '<option>No elections available</option>';
+          return;
+        }
+        electionSelect.innerHTML = data.map(e => `<option value="${e.id}">${e.title}</option>`).join("");
+        updateCandidates();
+      });
 
-        // update candidates when election changes
-        electionSelect.addEventListener("change", () => {
-          const selected = data.find(e => e.id === electionSelect.value);
-          candidateSelect.innerHTML = "";
-          if (selected) {
-            selected.candidates.forEach(c => {
-              const opt = document.createElement("option");
-              opt.value = c;
-              opt.textContent = c;
-              candidateSelect.appendChild(opt);
-            });
+    electionSelect.addEventListener("change", updateCandidates);
+
+    function updateCandidates() {
+      const electionId = electionSelect.value;
+      fetch("/elections")
+        .then(res => res.json())
+        .then(data => {
+          const election = data.find(e => e.id === electionId);
+          if (election) {
+            candidateSelect.innerHTML = election.candidates.map(c => `<option value="${c}">${c}</option>`).join("");
           } else {
-            candidateSelect.innerHTML = '<option value="">Select an election first</option>';
+            candidateSelect.innerHTML = "<option>No candidates</option>";
           }
         });
+    }
+
+    voterForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const electionId = electionSelect.value;
+      const candidate = candidateSelect.value;
+
+      fetch('/cast-vote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ voterId, electionId, candidate })
       })
-      .catch(() => {
-        electionSelect.innerHTML = '<option>Error loading elections</option>';
+      .then(res => res.text())
+      .then(html => {
+        document.open();
+        document.write(html);
+        document.close();
       });
+    });
   </script>
+
 </body>
 </html>

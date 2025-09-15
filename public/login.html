@@ -30,24 +30,63 @@
     </div>
   </main>
 
-  <script>
-    document.getElementById('loginForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-      const email = document.getElementById('email').value;
-      const pass = document.getElementById('password').value;
-      const role = document.getElementById('role').value;
+  <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification } 
+    from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
 
-      // Simple fixed demo logins (you can change emails & passwords here)
-      if (email === 'admin@gmail.com' && pass === '123' && role === 'admin') {
-        window.location.href = 'admin.html';
-      } else if (email === 'voter@gmail.com' && pass === '123' && role === 'voter') {
-        window.location.href = 'voter.html';
-      } else if (email === 'results@gmail.com' && pass === '123' && role === 'results') {
-        window.location.href = 'results';
-      } else {
-        document.getElementById('error').innerText = 'Invalid email or password!';
+  // ⬇️ Your Firebase Config
+  const firebaseConfig = {
+     apiKey: "AIzaSyBLCWcNSRxox56IbkahS4rNwTVIPCnFW9Q",
+  authDomain: "vote-chain-78885.firebaseapp.com",
+  projectId: "vote-chain-78885",
+  storageBucket: "vote-chain-78885.firebasestorage.app",
+  messagingSenderId: "575284193703",
+  appId: "1:575284193703:web:ecad4994f0311b7bcbae82",
+  measurementId: "G-FMKST3HZV5"
+
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('email').value;
+    const pass = document.getElementById('password').value;
+    const role = document.getElementById('role').value;
+
+    try {
+      // Try to login
+      const userCredential = await signInWithEmailAndPassword(auth, email, pass);
+      const user = userCredential.user;
+
+      if (!user.emailVerified) {
+        alert("Please verify your email first. Check your inbox.");
+        return;
       }
-    });
-  </script>
+
+      const voterId = user.uid; // unique voter ID
+
+      if (role === "voter") {
+        localStorage.setItem("voterId", voterId);
+        window.location.href = "voter.html";
+      } else if (role === "admin") {
+        window.location.href = "admin.html";
+      }
+
+    } catch (error) {
+      // If login fails → try creating account
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+        await sendEmailVerification(userCredential.user);
+        alert("Account created. Please check your email to verify, then login again.");
+      } catch (err) {
+        alert("Error: " + err.message);
+      }
+    }
+  });
+</script>
+
 </body>
 </html>
