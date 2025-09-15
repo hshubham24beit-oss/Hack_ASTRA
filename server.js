@@ -27,7 +27,6 @@ function generateVoterId() {
 app.post("/login", (req, res) => {
   const { email, password, role } = req.body;
 
-  // Admin and Results demo logins
   if (role === "admin" && email === "admin@gmail.com" && password === "123") {
     return res.json({ success: true, role: "admin" });
   }
@@ -35,7 +34,6 @@ app.post("/login", (req, res) => {
     return res.json({ success: true, role: "results" });
   }
 
-  // Voter login
   if (role === "voter") {
     if (!email || !password) {
       return res.json({ success: false, message: "Email and password are required" });
@@ -43,12 +41,10 @@ app.post("/login", (req, res) => {
 
     const existing = registeredVoters[email];
     if (!existing) {
-      // First time login → register this voter
       const newVoterId = generateVoterId();
       registeredVoters[email] = { password, voterId: newVoterId };
       return res.json({ success: true, role: "voter", voterId: newVoterId });
     } else {
-      // Already registered → must match password
       if (existing.password === password) {
         return res.json({ success: true, role: "voter", voterId: existing.voterId });
       } else {
@@ -61,10 +57,14 @@ app.post("/login", (req, res) => {
 });
 
 /* ==========================================================
-   GET all elections (for voter panel)
+   GET all elections (only active based on date) for voter panel
    ========================================================== */
 app.get("/elections", (req, res) => {
-  res.json(elections.map(e => ({
+  const now = new Date();
+  const active = elections.filter(e => {
+    return new Date(e.startDate) <= now && now <= new Date(e.endDate);
+  });
+  res.json(active.map(e => ({
     id: e.id,
     title: e.title,
     candidates: e.candidates,
@@ -83,27 +83,29 @@ app.get("/", (req, res) => {
    Admin creates election
    ========================================================== */
 app.post("/create-election", (req, res) => {
-  const title = req.body.title;
-  let candidates = req.body.candidates;
+  const { title, candidates, startDate, endDate } = req.body;
 
-  if (!title || !candidates) {
-    return res.send("Please provide title and candidates");
+  if (!title || !candidates || !startDate || !endDate) {
+    return res.send("Please provide title, candidates, startDate, and endDate");
   }
 
-  if (!Array.isArray(candidates)) {
-    candidates = candidates.split(",").map(c => c.trim());
+  let candidateList = candidates;
+  if (!Array.isArray(candidateList)) {
+    candidateList = candidateList.split(",").map(c => c.trim());
   }
 
   const newElection = {
     id: Date.now().toString(),
     title,
-    candidates,
+    candidates: candidateList,
     votes: {},
     voted: [],
-    published: false
+    published: false,
+    startDate: new Date(startDate).toISOString(),
+    endDate: new Date(endDate).toISOString()
   };
 
-  candidates.forEach(c => newElection.votes[c] = 0);
+  candidateList.forEach(c => newElection.votes[c] = 0);
   elections.push(newElection);
 
   res.send(`
@@ -134,6 +136,12 @@ app.post('/cast-vote', (req, res) => {
   const election = elections.find(e => e.id === electionId);
   if (!election) {
     return res.send(`<div class="vote-message error">Invalid election selected. <a href="/voter.html">Back</a></div>`);
+  }
+
+  // Check election time validity
+  const now = new Date();
+  if (now < new Date(election.startDate) || now > new Date(election.endDate)) {
+    return res.send(`<div class="vote-message error">This election is not active currently.</div>`);
   }
 
   if (election.voted.includes(voterId)) {

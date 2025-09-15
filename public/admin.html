@@ -4,102 +4,30 @@
   <meta charset="utf-8">
   <title>Admin Panel - VoteChain</title>
   <link rel="stylesheet" href="style.css">
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f4f4f4;
-      padding: 20px;
-    }
-    h1 { text-align: center; }
-    .container {
-      max-width: 700px;
-      margin: auto;
-      background: #fff;
-      padding: 25px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-    .candidate-field {
-      display: flex;
-      gap: 10px;
-      margin: 5px 0;
-    }
-    .candidate-field input {
-      flex: 1;
-      padding: 8px;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-    }
-    .remove-btn {
-      background: #f44336;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      padding: 0 10px;
-    }
-    .add-btn {
-      background: #2196F3;
-      color: white;
-      border: none;
-      padding: 8px 12px;
-      border-radius: 4px;
-      cursor: pointer;
-      display: inline-block;
-      margin: 10px 0;
-    }
-    .create-btn {
-      background: #4CAF50;
-      color: white;
-      border: none;
-      padding: 10px;
-      border-radius: 6px;
-      width: 100%;
-      cursor: pointer;
-      margin-top: 10px;
-    }
-    .election-list { margin-top: 30px; }
-    .election-item {
-      border: 1px solid #ddd;
-      padding: 15px;
-      margin: 10px 0;
-      border-radius: 6px;
-      background: #fafafa;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .publish-btn {
-      background: #2196F3;
-      color: white;
-      border: none;
-      padding: 8px 12px;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    .publish-btn:disabled {
-      background: gray;
-      cursor: not-allowed;
-    }
-  </style>
 </head>
 <body>
 
+  <header class="navbar">
+    <div class="brand">🏛️ VoteChain Admin</div>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="voter.html">Voter Panel</a>
+      <a href="/results">View Results</a>
+    </div>
+  </header>
+
   <h1>🛡️ Admin Panel</h1>
+
   <div class="container">
     <h2>Create New Election</h2>
-    <form method="POST" action="/create-election" id="createElectionForm">
+    <form method="POST" action="/create-election">
       <input type="text" name="title" placeholder="Election Title" required>
-
-      <div id="candidatesContainer">
-        <div class="candidate-field">
-          <input type="text" name="candidates" placeholder="Candidate Name" required>
-          <button type="button" class="remove-btn" onclick="removeCandidate(this)">×</button>
-        </div>
-      </div>
-
-      <button type="button" class="add-btn" onclick="addCandidate()">+ Add Another Candidate</button>
-      <button type="submit" class="create-btn">Create Election</button>
+      <input type="text" name="candidates" placeholder="Candidate names (comma separated)" required>
+      <label><strong>Start Date & Time</strong></label>
+      <input type="datetime-local" name="startDate" required>
+      <label><strong>End Date & Time</strong></label>
+      <input type="datetime-local" name="endDate" required>
+      <button type="submit">Create Election</button>
     </form>
 
     <div class="election-list">
@@ -109,19 +37,9 @@
   </div>
 
   <script>
-    function addCandidate() {
-      const container = document.getElementById("candidatesContainer");
-      const div = document.createElement("div");
-      div.className = "candidate-field";
-      div.innerHTML = `
-        <input type="text" name="candidates" placeholder="Candidate Name" required>
-        <button type="button" class="remove-btn" onclick="removeCandidate(this)">×</button>
-      `;
-      container.appendChild(div);
-    }
-
-    function removeCandidate(btn) {
-      btn.parentElement.remove();
+    function formatDateTime(dt) {
+      const d = new Date(dt);
+      return d.toLocaleString();
     }
 
     function loadElections() {
@@ -141,6 +59,7 @@
               <div>
                 <strong>${e.title}</strong><br>
                 Candidates: ${e.candidates.join(", ")}<br>
+                <small>🕒 ${formatDateTime(e.startDate)} - ${formatDateTime(e.endDate)}</small><br>
                 Status: ${e.published ? "✅ Published" : "🕒 Not Published"}
               </div>
               <button class="publish-btn" ${e.published ? "disabled" : ""} onclick="publish('${e.id}')">
