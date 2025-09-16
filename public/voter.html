@@ -77,19 +77,22 @@
       window.location.href = '/login.html';
     }
 
-    // ✅ Show voter ID
     document.getElementById('voterInfo').innerText = `Welcome, your Voter ID is: ${voterId}`;
 
     const electionSelect = document.getElementById('electionSelect');
     const candidateSelect = document.getElementById('candidateSelect');
     const voterForm = document.getElementById('voteForm');
 
-    // Load all elections
+    let electionsData = [];
+
+    // Load elections only once
     fetch("/elections")
       .then(res => res.json())
       .then(data => {
+        electionsData = data;
         if (!data.length) {
-          electionSelect.innerHTML = '<option>No elections available</option>';
+          electionSelect.innerHTML = '<option value="">No elections available</option>';
+          candidateSelect.innerHTML = '<option value="">No candidates</option>';
           return;
         }
         electionSelect.innerHTML = data.map(e => `<option value="${e.id}">${e.title}</option>`).join("");
@@ -100,22 +103,23 @@
 
     function updateCandidates() {
       const electionId = electionSelect.value;
-      fetch("/elections")
-        .then(res => res.json())
-        .then(data => {
-          const election = data.find(e => e.id === electionId);
-          if (election) {
-            candidateSelect.innerHTML = election.candidates.map(c => `<option value="${c}">${c}</option>`).join("");
-          } else {
-            candidateSelect.innerHTML = "<option>No candidates</option>";
-          }
-        });
+      const election = electionsData.find(e => e.id === electionId);
+      if (election && election.candidates.length) {
+        candidateSelect.innerHTML = election.candidates.map(c => `<option value="${c}">${c}</option>`).join("");
+      } else {
+        candidateSelect.innerHTML = '<option value="">No candidates</option>';
+      }
     }
 
     voterForm.addEventListener('submit', function(e) {
       e.preventDefault();
       const electionId = electionSelect.value;
       const candidate = candidateSelect.value;
+
+      if (!electionId || !candidate) {
+        alert("Please select election and candidate");
+        return;
+      }
 
       fetch('/cast-vote', {
         method: 'POST',
