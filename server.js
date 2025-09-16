@@ -271,5 +271,11 @@ app.get("/results", async (req, res) => {
   `);
 });
 
+app.use((err, req, res, next) => {
+  console.error("❌ Internal Server Error:", err);
+  res.status(500).send("Internal Server Error");
+});
+
+
 /* ========================================================== */
 app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
