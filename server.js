@@ -5,12 +5,16 @@ const mongoose = require("mongoose");
 const { Block, Blockchain } = require("./blockchain");
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
-// ====== CONNECT TO MONGODB ======
-mongoose.connect("mongodb+srv://hshubham24beit_db_user:v0uXTXBB1kUvwVnf@cluster0.plupwfh.mongodb.net/votechain?retryWrites=true&w=majority&appName=Cluster0")
+/* ------------------------- CONNECT TO MONGODB ------------------------- */
+mongoose.connect(
+  process.env.MONGO_URI ||
+  "mongodb+srv://hshubham24beit_db_user:v0uXTXBB1kUvwVnf@cluster0.plupwfh.mongodb.net/votechain?retryWrites=true&w=majority&appName=Cluster0",
+  { useNewUrlParser: true, useUnifiedTopology: true }
+)
   .then(() => console.log("✅ Connected to MongoDB Atlas"))
-  .catch(err => console.error("MongoDB connection error:", err));
+  .catch(err => console.error("❌ MongoDB connection error:", err));
 
 /* ------------------------- SCHEMAS ------------------------- */
 const voterSchema = new mongoose.Schema({
@@ -45,17 +49,15 @@ let voteChain = new Blockchain();
 app.post("/login", async (req, res) => {
   const { email, password, role } = req.body;
 
-  if (role === "admin" && email === "admin@gmail.com" && password === "123") {
+  if (role === "admin" && email === "admin@gmail.com" && password === "123")
     return res.json({ success: true, role: "admin" });
-  }
-  if (role === "results" && email === "results@gmail.com" && password === "123") {
+
+  if (role === "results" && email === "results@gmail.com" && password === "123")
     return res.json({ success: true, role: "results" });
-  }
 
   if (role === "voter") {
-    if (!email || !password) {
+    if (!email || !password)
       return res.json({ success: false, message: "Email and password are required" });
-    }
 
     let voter = await Voter.findOne({ email });
     if (!voter) {
@@ -75,7 +77,7 @@ app.post("/login", async (req, res) => {
 });
 
 /* ==========================================================
-   GET ELECTIONS (only active elections shown)
+   GET ACTIVE ELECTIONS (only visible if within start-end date)
    ========================================================== */
 app.get("/elections", async (req, res) => {
   const now = new Date();
@@ -85,7 +87,7 @@ app.get("/elections", async (req, res) => {
   });
 
   res.json(elections.map(e => ({
-    id: e._id.toString(),          // ✅ add this
+    id: e._id.toString(),
     title: e.title,
     candidates: e.candidates,
     published: e.published
@@ -148,9 +150,8 @@ app.post("/cast-vote", async (req, res) => {
   const { voterId, candidate, electionId } = req.body;
 
   const election = await Election.findById(electionId);
-  if (!election) {
-    return res.send(`<div class="vote-message error">Invalid election selected. <a href="/voter.html">Back</a></div>`);
-  }
+  if (!election)
+    return res.send(`<div class="vote-message error">Invalid election. <a href="/voter.html">Back</a></div>`);
 
   if (election.voted.includes(voterId)) {
     return res.send(`
@@ -165,9 +166,8 @@ app.post("/cast-vote", async (req, res) => {
     `);
   }
 
-  if (!election.candidates.includes(candidate)) {
+  if (!election.candidates.includes(candidate))
     return res.send(`<div class="vote-message error">Invalid candidate. <a href="/voter.html">Choose again</a></div>`);
-  }
 
   election.votes[candidate] += 1;
   election.voted.push(voterId);
