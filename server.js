@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 3000;
 /* ------------------------- CONNECT TO MONGODB ------------------------- */
 mongoose.connect(
   process.env.MONGO_URI ||
-  "mongodb+srv://hshubham24beit_db_user:v0uXTXBB1kUvwVnf@cluster0.plupwfh.mongodb.net/votechain?retryWrites=true&w=majority&appName=Cluster0",
+  "mongodb+srv://hshubham24beit_db_user:Shubham9769517001@cluster0.plupwfh.mongodb.net/votechain?retryWrites=true&w=majority&appName=Cluster0",
   { useNewUrlParser: true, useUnifiedTopology: true }
 )
   .then(() => console.log("✅ Connected to MongoDB Atlas"))
