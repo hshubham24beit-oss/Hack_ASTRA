@@ -85,17 +85,25 @@
 
     let electionsData = [];
 
-    // Load elections only once
+    // Load active elections
     fetch("/elections")
       .then(res => res.json())
       .then(data => {
-        electionsData = data;
-        if (!data.length) {
+        electionsData = data.map(e => ({
+          id: e.id || e._id,            // ✅ support both id and _id
+          title: e.title,
+          candidates: e.candidates
+        }));
+
+        if (!electionsData.length) {
           electionSelect.innerHTML = '<option value="">No elections available</option>';
           candidateSelect.innerHTML = '<option value="">No candidates</option>';
           return;
         }
-        electionSelect.innerHTML = data.map(e => `<option value="${e.id}">${e.title}</option>`).join("");
+
+        electionSelect.innerHTML = electionsData.map(e => 
+          `<option value="${e.id}">${e.title}</option>`).join("");
+
         updateCandidates();
       });
 
@@ -105,7 +113,8 @@
       const electionId = electionSelect.value;
       const election = electionsData.find(e => e.id === electionId);
       if (election && election.candidates.length) {
-        candidateSelect.innerHTML = election.candidates.map(c => `<option value="${c}">${c}</option>`).join("");
+        candidateSelect.innerHTML = election.candidates
+          .map(c => `<option value="${c}">${c}</option>`).join("");
       } else {
         candidateSelect.innerHTML = '<option value="">No candidates</option>';
       }
@@ -134,6 +143,5 @@
       });
     });
   </script>
-
 </body>
 </html>
