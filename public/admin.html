@@ -116,9 +116,10 @@
 
   <script>
     function formatDateTime(dt) {
-      const d = new Date(dt);
-      return d.toLocaleString();
-    }
+  const d = new Date(dt);
+  return d.toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+}
+
 
     function loadElections() {
       fetch("/elections")

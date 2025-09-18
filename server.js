@@ -88,25 +88,7 @@ app.post("/login", async (req, res, next) => {
 /* ==========================================================
    GET ACTIVE ELECTIONS
    ========================================================== */
-app.get("/elections", async (req, res, next) => {
-  try {
-    
-    const elections = await Election.find();
 
-    res.json(
-      elections.map((e) => ({
-        id: e._id.toString(),
-        title: e.title,
-        candidates: e.candidates,
-        published: e.published,
-        startDate: e.startDate,
-        endDate: e.endDate,
-      }))
-    );
-  } catch (err) {
-    next(err);
-  }
-});
 
 /* ==========================================================
    HOME PAGE
@@ -124,7 +106,34 @@ app.post("/create-election", async (req, res, next) => {
 
     if (!title || !candidates || !startDate || !endDate) {
       return res.send("Please provide title, candidates, startDate, and endDate");
-    }
+    }app.get("/elections", async (req, res, next) => {
+  try {
+    // Get current UTC time
+    const nowUTC = new Date();
+
+    // Convert to IST by adding +5:30 (in ms)
+    const nowIST = new Date(nowUTC.getTime() + (5.5 * 60 * 60 * 1000));
+
+    const elections = await Election.find({
+      startDate: { $lte: nowIST },
+      endDate: { $gte: nowIST }
+    });
+
+    res.json(
+      elections.map((e) => ({
+        id: e._id.toString(),
+        title: e.title,
+        candidates: e.candidates,
+        published: e.published,
+        startDate: e.startDate,
+        endDate: e.endDate
+      }))
+    );
+  } catch (err) {
+    next(err);
+  }
+});
+
 
     const candidateArray = Array.isArray(candidates)
       ? candidates
