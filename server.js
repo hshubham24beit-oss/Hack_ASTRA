@@ -8,11 +8,14 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 /* ------------------------- CONNECT TO MONGODB ------------------------- */
+mongoose.set("strictQuery", false);
+
+const mongoURI =
+  process.env.MONGO_URI ||
+  "mongodb+srv://hshubham24beit_db_user:Shubham9769517001@cluster0.plupwfh.mongodb.net/votechain?retryWrites=true&w=majority&appName=Cluster0";
+
 mongoose
-  .connect(
-    
-      "mongodb+srv://hshubham24beit_db_user:Shubham9769517001@cluster0.plupwfh.mongodb.net/votechain?retryWrites=true&w=majority&appName=Cluster0"
-  )
+  .connect(mongoURI)
   .then(() => console.log("✅ Connected to MongoDB Atlas"))
   .catch((err) => console.error("❌ MongoDB connection error:", err));
 
@@ -155,6 +158,7 @@ app.post("/create-election", async (req, res, next) => {
       </body></html>
     `);
   } catch (err) {
+    console.error("❌ Error creating election:", err);
     next(err);
   }
 });
