@@ -85,14 +85,14 @@
 
     let electionsData = [];
 
-    // Load active elections
-    fetch("/elections")
+    // Load elections specific to this voter
+    fetch(`/elections?voterId=${voterId}`)
       .then(res => res.json())
       .then(data => {
         electionsData = data.map(e => ({
-          id: e.id || e._id,            // ✅ support both id and _id
+          id: e._id || e.id,
           title: e.title,
-          candidates: e.candidates
+          candidates: e.candidates || []
         }));
 
         if (!electionsData.length) {
