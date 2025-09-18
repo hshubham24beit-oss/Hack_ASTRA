@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const express = require("express");
 const bodyParser = require("body-parser");
 const path = require("path");
@@ -89,14 +91,11 @@ app.post("/login", async (req, res, next) => {
 app.get("/elections", async (req, res, next) => {
   try {
     const now = new Date();
-const elections = await Election.find({
-  startDate: { $lte: now.toISOString() },
-  endDate: { $gte: now.toISOString() }
-});
+    const elections = await Election.find({
+      startDate: { $lte: now },
+      endDate: { $gte: now },
+    });
 
-    
-
-    
     res.json(
       elections.map((e) => ({
         id: e._id.toString(),
