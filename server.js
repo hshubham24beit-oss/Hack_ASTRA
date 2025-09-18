@@ -90,11 +90,8 @@ app.post("/login", async (req, res, next) => {
    ========================================================== */
 app.get("/elections", async (req, res, next) => {
   try {
-    const now = new Date();
-    const elections = await Election.find({
-      startDate: { $lte: now },
-      endDate: { $gte: now },
-    });
+    
+    const elections = await Election.find();
 
     res.json(
       elections.map((e) => ({
