@@ -4,10 +4,12 @@
   <meta charset="utf-8">
   <title>Admin Login - VoteChain</title>
   <link rel="stylesheet" href="style.css">
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js"></script>
 </head>
-<body class="login-page admin-login">
-  <div class="login-container">
-    <h1>🛡️ Admin Login</h1>
+<body>
+  <h1 style="text-align:center;">🛡️ Admin Login</h1>
+  <div class="container">
     <form id="adminLoginForm">
       <input type="email" id="email" placeholder="Admin Email" required>
       <input type="password" id="password" placeholder="Password" required>
@@ -16,22 +18,43 @@
   </div>
 
   <script>
+    // 🔧 Your Firebase config
+    const firebaseConfig = {
+     apiKey: "AIzaSyBLCWcNSRxox56IbkahS4rNwTVIPCnFW9Q",
+  authDomain: "vote-chain-78885.firebaseapp.com",
+  projectId: "vote-chain-78885",
+  storageBucket: "vote-chain-78885.firebasestorage.app",
+  messagingSenderId: "575284193703",
+  appId: "1:575284193703:web:ecad4994f0311b7bcbae82",
+  measurementId: "G-FMKST3HZV5"
+
+    }
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
     document.getElementById('adminLoginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
 
-      const res = await fetch('/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, role: "admin" })
-      });
-      const data = await res.json();
+      try {
+        const userCred = await auth.signInWithEmailAndPassword(email, password);
+        const idToken = await userCred.user.getIdToken();
 
-      if (data.success && data.role === "admin") {
-        window.location.href = '/admin.html';
-      } else {
-        alert(data.message || 'Admin login failed!');
+        const res = await fetch('/auth/verify-token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken, role: "admin" })
+        });
+
+        const data = await res.json();
+        if (data.success && data.role === "admin") {
+          window.location.href = '/admin.html';
+        } else {
+          alert(data.message || 'Admin login failed!');
+        }
+      } catch (err) {
+        alert("Login error: " + err.message);
       }
     });
   </script>

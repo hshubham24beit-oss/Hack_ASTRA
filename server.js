@@ -1,3 +1,4 @@
+
 require('dotenv').config();
 
 const express = require("express");
@@ -96,6 +97,40 @@ app.post("/login", async (req, res, next) => {
     return res.json({ success: false, message: "Invalid credentials" });
   } catch (err) {
     next(err);
+  }
+});
+
+app.post("/auth/verify-token", async (req, res) => {
+  const { idToken, role } = req.body;
+
+  try {
+    // Verify Firebase ID token
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    const email = decodedToken.email;
+
+    // Special case for admin login
+    if (role === "admin") {
+      if (email === "admin@gmail.com") {
+        return res.json({ success: true, role: "admin" });
+      } else {
+        return res.json({ success: false, message: "Not authorized as admin" });
+      }
+    }
+
+    // For voters
+    let voter = await Voter.findOne({ email });
+    if (!voter) {
+      voter = await Voter.create({
+        email,
+        password: "", // Firebase handles passwords, so leave empty
+        voterId: "VOTER-" + Math.random().toString(36).substring(2, 10).toUpperCase(),
+      });
+    }
+
+    res.json({ success: true, role: "voter", voterId: voter.voterId });
+  } catch (err) {
+    console.error("❌ Firebase verification error:", err);
+    res.json({ success: false, message: "Invalid Firebase token" });
   }
 });
 
