@@ -38,6 +38,20 @@ const electionSchema = new mongoose.Schema({
   endDate: Date,
 });
 
+// ---------------- Dispute Schema ----------------
+const disputeSchema = new mongoose.Schema({
+  voterId: { type: String, required: true },
+  electionId: { type: String, required: true },
+  issue: { type: String, required: true, trim: true },
+  status: { type: String, enum: ["Pending","Resolved","Rejected"], default: "Pending" },
+  resolution: { type: String, default: "" },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: Date
+});
+
+const Dispute = mongoose.model("Dispute", disputeSchema);
+
+
 const Voter = mongoose.model("Voter", voterSchema);
 const Election = mongoose.model("Election", electionSchema);
 
@@ -115,6 +129,9 @@ app.get("/elections", async (req, res, next) => {
 
 
 
+
+
+
 /* ==========================================================
    HOME PAGE
    ========================================================== */
@@ -122,6 +139,9 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
+/* ==========================================================
+   CREATE ELECTION
+   ========================================================== */
 /* ==========================================================
    CREATE ELECTION
    ========================================================== */
@@ -176,6 +196,10 @@ app.post("/create-election", async (req, res, next) => {
     next(err);
   }
 });
+
+
+
+
 
 
 /* ==========================================================
@@ -332,6 +356,58 @@ app.get("/results", async (req, res, next) => {
   }
 });
 
+app.post("/raise-dispute", async (req, res, next) => {
+  try {
+    const { voterId, electionId, issue } = req.body;
+    if (!voterId || !electionId || !issue) return res.status(400).json({ success:false, message:"All fields required" });
+
+    // optional: verify election exists
+    const election = await Election.findById(electionId);
+    if (!election) return res.status(400).json({ success:false, message: "Invalid election" });
+
+    const dispute = await Dispute.create({ voterId, electionId, issue });
+    // optional: log to blockchain
+    const newBlock = new Block(voteChain.chain.length, Date.now().toString(), { type:"dispute_created", disputeId: dispute._id.toString(), voterId, electionId }, voteChain.getLatestBlock().hash);
+    voteChain.addBlock(newBlock);
+
+    return res.json({ success:true, message:"Dispute raised", dispute });
+  } catch(err) { next(err); }
+});
+
+app.get("/my-disputes/:voterId", async (req, res, next) => {
+  try {
+    const disputes = await Dispute.find({ voterId: req.params.voterId }).sort({ createdAt: -1 });
+    res.json(disputes);
+  } catch(err) { next(err); }
+});
+
+app.get("/disputes", async (req, res, next) => {
+  try {
+    const disputes = await Dispute.find().sort({ createdAt: -1 });
+    res.json(disputes);
+  } catch(err) { next(err); }
+});
+
+app.post("/resolve-dispute/:id", async (req, res, next) => {
+  try {
+    const { status, resolution } = req.body; // status = "Resolved" or "Rejected"
+    if (!["Resolved","Rejected"].includes(status)) return res.status(400).json({ success:false, message:"Invalid status" });
+
+    const dispute = await Dispute.findById(req.params.id);
+    if (!dispute) return res.status(404).json({ success:false, message:"Not found" });
+
+    dispute.status = status;
+    dispute.resolution = resolution || "";
+    dispute.updatedAt = new Date();
+    await dispute.save();
+
+    // optional: log to blockchain
+    const newBlock = new Block(voteChain.chain.length, Date.now().toString(), { type:"dispute_resolved", disputeId: dispute._id.toString(), status }, voteChain.getLatestBlock().hash);
+    voteChain.addBlock(newBlock);
+
+    return res.json({ success:true, dispute });
+  } catch(err) { next(err); }
+});
 
 
 /* ------------------------- ERROR HANDLER ------------------------- */

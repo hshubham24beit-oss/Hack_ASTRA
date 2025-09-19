@@ -33,80 +33,179 @@
 
       <button type="submit">Vote</button>
     </form>
+    <hr>
+<h2>Report a Problem / Raise Dispute</h2>
+<form id="disputeForm">
+  <label for="disputeElection">Election</label>
+  <select id="disputeElection" required></select>
+
+  <label for="issueText">Issue (short description)</label>
+  <textarea id="issueText" rows="3" style="width:100%" required></textarea>
+
+  <button type="submit">Submit Dispute</button>
+</form>
+
+<h3>Your Disputes</h3>
+<div id="myDisputes">Loading your disputes...</div>
+
   </div>
 
   <script>
-    const voterId = localStorage.getItem('voterId');
-    if (!voterId) {
-      alert('You must login first.');
-      window.location.href = '/login.html';
+/* ----------------- Unified client script for voting + disputes ----------------- */
+
+const voterId = localStorage.getItem('voterId');
+if (!voterId) {
+  alert('You must login first.');
+  window.location.href = '/login.html';
+}
+
+// page elements
+document.getElementById('voterInfo').innerText = `Welcome, your Voter ID is: ${voterId}`;
+const electionSelect = document.getElementById('electionSelect');
+const candidateSelect = document.getElementById('candidateSelect');
+const voterForm = document.getElementById('voteForm');
+
+const disputeElection = document.getElementById('disputeElection');
+const issueText = document.getElementById('issueText');
+const disputeForm = document.getElementById('disputeForm');
+const myDisputes = document.getElementById('myDisputes');
+
+let electionsData = []; // will be filled from server
+
+// 1) Load elections from server
+fetch("/elections")
+  .then(res => res.json())
+  .then(data => {
+    // normalize entries (support id or _id)
+    electionsData = data.map(e => ({
+      id: e.id || e._id,
+      title: e.title,
+      candidates: e.candidates || []
+    }));
+
+    // if no elections
+    if (!electionsData.length) {
+      electionSelect.innerHTML = '<option value="">No elections available</option>';
+      candidateSelect.innerHTML = '<option value="">No candidates</option>';
+      disputeElection.innerHTML = '<option value="">No elections</option>';
+      // still load disputes for this voter
+      loadMyDisputes();
+      return;
     }
 
-    document.getElementById('voterInfo').innerText = `Welcome, your Voter ID is: ${voterId}`;
+    // populate voting select
+    electionSelect.innerHTML = electionsData.map(e => `<option value="${e.id}">${e.title}</option>`).join("");
+    // populate candidates for the initially selected election
+    updateCandidates();
 
-    const electionSelect = document.getElementById('electionSelect');
-    const candidateSelect = document.getElementById('candidateSelect');
-    const voterForm = document.getElementById('voteForm');
+    // populate dispute election select (only AFTER electionsData is ready)
+    populateDisputeElection();
 
-    let electionsData = [];
+    // load this voter's disputes (after dispute select exists)
+    loadMyDisputes();
+  })
+  .catch(err => {
+    console.error('Failed to load elections:', err);
+    electionSelect.innerHTML = '<option value="">Error loading elections</option>';
+    disputeElection.innerHTML = '<option value="">Error</option>';
+  });
 
-    // Load elections
-    fetch("/elections")
-      .then(res => res.json())
-      .then(data => {
-        electionsData = data.map(e => ({
-          id: e.id || e._id,
-          title: e.title,
-          candidates: e.candidates
-        }));
+/* update candidate dropdown when election changes */
+electionSelect.addEventListener("change", updateCandidates);
+function updateCandidates() {
+  const electionId = electionSelect.value;
+  const election = electionsData.find(e => e.id === electionId);
+  if (election && election.candidates.length) {
+    candidateSelect.innerHTML = election.candidates.map(c => `<option value="${c}">${c}</option>`).join("");
+  } else {
+    candidateSelect.innerHTML = '<option value="">No candidates</option>';
+  }
+}
 
-        if (!electionsData.length) {
-          electionSelect.innerHTML = '<option value="">No elections available</option>';
-          candidateSelect.innerHTML = '<option value="">No candidates</option>';
-          return;
-        }
+/* populate dispute election dropdown — call only AFTER electionsData is set */
+function populateDisputeElection() {
+  if (!electionsData.length) {
+    disputeElection.innerHTML = '<option value="">No elections</option>';
+    return;
+  }
+  disputeElection.innerHTML = electionsData.map(e => `<option value="${e.id}">${e.title}</option>`).join('');
+}
 
-        electionSelect.innerHTML = electionsData.map(e => 
-          `<option value="${e.id}">${e.title}</option>`).join("");
+/* voting submit */
+voterForm.addEventListener('submit', function(e) {
+  e.preventDefault();
+  const electionId = electionSelect.value;
+  const candidate = candidateSelect.value;
+  if (!electionId || !candidate) { alert("Please select election and candidate"); return; }
 
-        updateCandidates();
-      });
+  fetch('/cast-vote', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ voterId, electionId, candidate })
+  })
+  .then(res => res.text())
+  .then(html => {
+    document.open();
+    document.write(html);
+    document.close();
+  })
+  .catch(err => { console.error('Vote failed', err); alert('Vote failed'); });
+});
 
-    electionSelect.addEventListener("change", updateCandidates);
+/* ----------------- Dispute handling ----------------- */
 
-    function updateCandidates() {
-      const electionId = electionSelect.value;
-      const election = electionsData.find(e => e.id === electionId);
-      if (election && election.candidates.length) {
-        candidateSelect.innerHTML = election.candidates
-          .map(c => `<option value="${c}">${c}</option>`).join("");
-      } else {
-        candidateSelect.innerHTML = '<option value="">No candidates</option>';
-      }
-    }
+/* submit dispute */
+disputeForm.addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  const electionId = disputeElection.value;
+  const issue = issueText.value.trim();
+  if (!electionId || !issue) return alert('Select election and write issue.');
 
-    voterForm.addEventListener('submit', function(e) {
-      e.preventDefault();
-      const electionId = electionSelect.value;
-      const candidate = candidateSelect.value;
-
-      if (!electionId || !candidate) {
-        alert("Please select election and candidate");
-        return;
-      }
-
-      fetch('/cast-vote', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ voterId, electionId, candidate })
-      })
-      .then(res => res.text())
-      .then(html => {
-        document.open();
-        document.write(html);   // ✅ Show success page (with redirect to home in 3s)
-        document.close();
-      });
+  try {
+    const res = await fetch('/raise-dispute', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ voterId, electionId, issue })
     });
-  </script>
+    const j = await res.json();
+    if (j.success) {
+      alert('Dispute submitted.');
+      issueText.value = '';
+      loadMyDisputes();
+    } else {
+      alert(j.message || 'Error submitting dispute');
+    }
+  } catch (err) {
+    console.error('Error raising dispute', err);
+    alert('Error raising dispute');
+  }
+});
+
+/* load disputes for this voter */
+async function loadMyDisputes() {
+  try {
+    const res = await fetch(`/my-disputes/${encodeURIComponent(voterId)}`);
+    const data = await res.json();
+    if (!Array.isArray(data) || data.length === 0) {
+      myDisputes.innerHTML = '<p>No disputes found.</p>';
+      return;
+    }
+    myDisputes.innerHTML = data.map(d => `
+      <div class="dispute-card">
+        <strong>${d.issue}</strong><br>
+        Election: ${d.electionId}<br>
+        Status: <em>${d.status}</em><br>
+        Raised: ${new Date(d.createdAt).toLocaleString()}<br>
+        ${d.resolution ? `<div><strong>Resolution:</strong> ${d.resolution}</div>` : ''}
+      </div>
+    `).join('');
+  } catch (err) {
+    console.error('Failed to load disputes', err);
+    myDisputes.innerHTML = '<p>Error loading disputes</p>';
+  }
+}
+</script>
+
+
 </body>
 </html>

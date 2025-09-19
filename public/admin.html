@@ -36,6 +36,11 @@
       <h2>Existing Elections</h2>
       <div id="electionsContainer">Loading elections...</div>
     </div>
+
+    <hr>
+<h2>Disputes</h2>
+<div id="disputesContainer">Loading disputes...</div>
+
   </div>
 
   <script>
@@ -83,5 +88,43 @@
 
     loadElections();
   </script>
+
+  <script>
+  async function loadDisputes() {
+    const res = await fetch('/disputes');
+    const disputes = await res.json();
+    const container = document.getElementById('disputesContainer');
+    if (!disputes.length) { container.innerHTML = '<p>No disputes</p>'; return; }
+    container.innerHTML = disputes.map(d => `
+      <div class="dispute-card" id="dispute-${d._id}">
+        <strong>Issue:</strong> ${d.issue} <br>
+        <strong>Voter:</strong> ${d.voterId} <br>
+        <strong>Election:</strong> ${d.electionId} <br>
+        <strong>Status:</strong> ${d.status} <br>
+        <textarea id="res-${d._id}" placeholder="Write resolution here..." rows="2" style="width:100%"></textarea>
+        <button onclick="resolveDispute('${d._id}', 'Resolved')">Resolve</button>
+        <button onclick="resolveDispute('${d._id}', 'Rejected')">Reject</button>
+      </div>
+    `).join('');
+  }
+
+  async function resolveDispute(id, status) {
+    const resolution = document.getElementById(`res-${id}`).value || '';
+    const res = await fetch(`/resolve-dispute/${id}`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ status, resolution /* optional adminPass: '123' */ })
+    });
+    const j = await res.json();
+    if (j.success) {
+      alert('Dispute updated');
+      loadDisputes();
+    } else alert(j.message || 'Error');
+  }
+
+  loadDisputes();
+  // optionally refresh every 20s: setInterval(loadDisputes, 20000);
+</script>
+
 </body>
 </html>
