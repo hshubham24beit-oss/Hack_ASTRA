@@ -272,7 +272,7 @@ app.get("/results", async (req, res, next) => {
   try {
     const now = new Date();
 
-    // ✅ Only show elections that are published AND still active (ongoing or future within endDate)
+    // ✅ Only show elections that are published AND active
     const published = await Election.find({
       published: true,
       startDate: { $lte: now },
@@ -321,6 +321,9 @@ app.get("/results", async (req, res, next) => {
           <div class="content">
             <h1>📢 Live Election Results</h1>
             ${allResults}
+            
+            <h2>🔗 Blockchain Ledger</h2>
+            <pre class="ledger">${JSON.stringify(voteChain.chain, null, 2)}</pre>
           </div>
         </body></html>
     `);
@@ -328,6 +331,7 @@ app.get("/results", async (req, res, next) => {
     next(err);
   }
 });
+
 
 
 /* ------------------------- ERROR HANDLER ------------------------- */
