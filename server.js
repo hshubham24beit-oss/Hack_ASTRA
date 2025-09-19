@@ -272,7 +272,7 @@ app.get("/results", async (req, res, next) => {
   try {
     const now = new Date();
 
-    // ✅ Get only published & currently active elections
+    // ✅ Only show elections that are published AND active
     const published = await Election.find({
       published: true,
       startDate: { $lte: now },
@@ -291,7 +291,6 @@ app.get("/results", async (req, res, next) => {
       `);
     }
 
-    // ✅ Prepare election results section
     const allResults = published.map(e => `
       <div class="election-card">
         <h3>${e.title}</h3>
@@ -306,61 +305,27 @@ app.get("/results", async (req, res, next) => {
       </div>
     `).join("");
 
-    // ✅ Get list of published election titles
-    const publishedTitles = published.map(e => e.title);
-
-    // ✅ Filter blockchain ledger only for published elections
-    const ledgerHtml = voteChain.chain
-      .filter(block => block.data && publishedTitles.includes(block.data.election))
-      .map(block => `
-        <div class="block">
-          <h4>🧱 Block #${block.index}</h4>
-          <p><strong>Timestamp:</strong> ${block.timestamp}</p>
-          <p><strong>Election:</strong> ${block.data.election}</p>
-          <p><strong>Voter ID:</strong> ${block.data.voterId}</p>
-          <p><strong>Candidate:</strong> ${block.data.candidate}</p>
-          <p><strong>Hash:</strong> ${block.hash}</p>
-          <p><strong>Prev Hash:</strong> ${block.previousHash}</p>
-        </div>
-      `).join("");
-
     res.send(`
       <html><head><meta charset="utf-8">
         <title>Results - VoteChain</title>
-        <link rel="stylesheet" href="/style.css">
-        <style>
-          .block {
-            background: #f9f9f9;
-            border: 1px solid #ddd;
-            padding: 12px;
-            margin: 10px 0;
-            border-radius: 6px;
-            box-shadow: 0 0 4px rgba(0,0,0,0.1);
-            font-family: monospace;
-          }
-          .block h4 {
-            margin: 0 0 8px 0;
-            color: #0077cc;
-          }
-        </style>
-      </head>
-      <body>
-        <header class="navbar">
-          <div class="brand">🏛️ VoteChain</div>
-          <div class="nav-links">
-            <a href="/">Home</a>
-            <a href="admin.html">Admin Panel</a>
-            <a href="voter.html">Voter Panel</a>
+        <link rel="stylesheet" href="/style.css"></head>
+        <body>
+          <header class="navbar">
+            <div class="brand">🏛️ VoteChain</div>
+            <div class="nav-links">
+              <a href="/">Home</a>
+              <a href="admin.html">Admin Panel</a>
+              <a href="voter.html">Voter Panel</a>
+            </div>
+          </header>
+          <div class="content">
+            <h1>📢 Live Election Results</h1>
+            ${allResults}
+            
+            <h2>🔗 Blockchain Ledger</h2>
+            <pre class="ledger">${JSON.stringify(voteChain.chain, null, 2)}</pre>
           </div>
-        </header>
-        <div class="content">
-          <h1>📢 Live Election Results</h1>
-          ${allResults}
-          
-          <h2>🔗 Blockchain Ledger (Published Elections Only)</h2>
-          ${ledgerHtml || "<p>No blockchain entries for published elections yet.</p>"}
-        </div>
-      </body></html>
+        </body></html>
     `);
   } catch (err) {
     next(err);
