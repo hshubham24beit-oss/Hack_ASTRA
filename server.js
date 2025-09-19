@@ -207,7 +207,18 @@ app.post("/cast-vote", async (req, res, next) => {
     );
     voteChain.addBlock(newBlock);
 
-    res.redirect(`/results?voterId=${voterId}`);
+    res.send(`
+  <html><head><meta charset="utf-8"><title>Vote Cast</title>
+  <link rel="stylesheet" href="/style.css">
+  </head>
+  <body><div class="vote-message success">
+    ✅ Your vote for <strong>${candidate}</strong> in <strong>${election.title}</strong> is recorded.
+    <br><br>
+    <a href="/voter.html">Back to Voter Panel</a> |
+    <a href="/results?voterId=${voterId}">View Results</a>
+  </div></body></html>
+`);
+
   } catch (err) {
     next(err);
   }
