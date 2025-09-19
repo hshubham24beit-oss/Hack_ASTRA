@@ -86,16 +86,16 @@ app.post("/login", async (req, res, next) => {
 });
 
 /* ==========================================================
-   GET ACTIVE ELECTIONS
+   GET ALL ELECTIONS (Admin + Voter use this)
    ========================================================== */
+
 app.get("/elections", async (req, res, next) => {
   try {
-    const nowUTC = new Date();
-    const nowIST = new Date(nowUTC.getTime() + 5.5 * 60 * 60 * 1000);
+    const now = new Date(); // ✅ UTC time (same format MongoDB stores)
 
     const elections = await Election.find({
-      startDate: { $lte: nowIST },
-      endDate: { $gte: nowIST },
+      startDate: { $lte: now },
+      endDate: { $gte: now }
     });
 
     res.json(
@@ -113,6 +113,8 @@ app.get("/elections", async (req, res, next) => {
   }
 });
 
+
+
 /* ==========================================================
    HOME PAGE
    ========================================================== */
@@ -120,6 +122,9 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
+/* ==========================================================
+   CREATE ELECTION
+   ========================================================== */
 /* ==========================================================
    CREATE ELECTION
    ========================================================== */
@@ -131,16 +136,17 @@ app.post("/create-election", async (req, res, next) => {
       return res.send("Please provide title, candidates, startDate, and endDate");
     }
 
+    // 🔑 Ensure candidates are stored as an array
     const candidateArray = Array.isArray(candidates)
       ? candidates
-      : candidates.split(",").map((c) => c.trim());
+      : candidates.split(",").map(c => c.trim()).filter(c => c.length > 0);
 
     const votesObj = {};
-    candidateArray.forEach((c) => (votesObj[c] = 0));
+    candidateArray.forEach(c => votesObj[c] = 0);
 
     await Election.create({
       title,
-      candidates: candidateArray,
+      candidates: candidateArray,   // ✅ Save as array
       votes: votesObj,
       voted: [],
       published: false,
@@ -166,6 +172,7 @@ app.post("/create-election", async (req, res, next) => {
     next(err);
   }
 });
+
 
 /* ==========================================================
    CAST VOTE
@@ -195,10 +202,11 @@ app.post("/cast-vote", async (req, res, next) => {
       return res.send(`<div class="vote-message error">Invalid candidate. <a href="/voter.html">Choose again</a></div>`);
 
     election.votes[candidate] = (election.votes[candidate] || 0) + 1;
-    election.markModified("votes");
+    election.markModified("votes");   
     election.voted.push(voterId);
     await election.save();
 
+    // Blockchain record
     const newBlock = new Block(
       voteChain.chain.length,
       Date.now().toString(),
@@ -207,49 +215,68 @@ app.post("/cast-vote", async (req, res, next) => {
     );
     voteChain.addBlock(newBlock);
 
+    // ✅ Redirect to HOME after vote
     res.send(`
-  <html><head><meta charset="utf-8"><title>Vote Cast</title>
-  <link rel="stylesheet" href="/style.css">
-  <meta http-equiv="refresh" content="3;url=/voter.html" /></head>
-  <body><div class="vote-message success">
-    ✅ Your vote for <strong>${candidate}</strong> in <strong>${election.title}</strong> is recorded.
-    <br><br><a href="/voter.html">Back to Voter Panel</a>
-  </div></body></html>
-`);
-
-
+      <html><head><meta charset="utf-8"><title>Vote Cast</title>
+      <link rel="stylesheet" href="/style.css">
+      <meta http-equiv="refresh" content="3;url=/" /></head>
+      <body><div class="vote-message success">
+        ✅ Your vote for <strong>${candidate}</strong> in <strong>${election.title}</strong> has been recorded successfully.
+        <br><br><a href="/">Back to Home</a>
+      </div></body></html>
+    `);
   } catch (err) {
     next(err);
   }
 });
 
 /* ==========================================================
-   RESULTS PAGE (ONLY VOTED ELECTIONS)
+   PUBLISH RESULTS
+   ========================================================== */
+app.post("/publish-results/:id", async (req, res, next) => {
+  try {
+    const election = await Election.findById(req.params.id);
+    if (!election) return res.send("Election not found");
+
+    election.published = true;
+    await election.save();
+
+    res.send(`
+      <html><head><meta charset="utf-8">
+        <title>Published</title>
+        <link rel="stylesheet" href="/style.css">
+        <meta http-equiv="refresh" content="2;url=/" />
+      </head><body>
+        <div class="result-message success">
+          📢 Results for "<strong>${election.title}</strong>" have been published.
+          <br><br><a href="/">Go Back</a>
+        </div>
+      </body></html>
+    `);
+  } catch (err) {
+    next(err);
+  }
+});
+
+/* ==========================================================
+   RESULTS PAGE
    ========================================================== */
 app.get("/results", async (req, res, next) => {
   try {
-    const { voterId } = req.query;
-
-    let filter = { published: true };
-    if (voterId) {
-      filter.voted = voterId;
-    }
-
-    const elections = await Election.find(filter);
-
-    if (!elections.length) {
+    const published = await Election.find({ published: true });
+    if (!published.length) {
       return res.send(`
         <html><head><meta charset="utf-8">
         <title>Results - VoteChain</title>
         <link rel="stylesheet" href="/style.css"></head>
         <body class="no-results">
-          <h2>No results found yet.</h2>
+          <h2>No results are published yet.</h2>
           <a href="/" class="back-link">🏠 Back to Home</a>
         </body></html>
       `);
     }
 
-    const allResults = elections
+    const allResults = published
       .map(
         (e) => `
       <div class="election-card">
@@ -284,7 +311,7 @@ app.get("/results", async (req, res, next) => {
             </div>
           </header>
           <div class="content">
-            <h1>📢 Election Results</h1>
+            <h1>📢 Published Election Results</h1>
             ${allResults}
             <h2>Blockchain Ledger</h2>
             <pre class="ledger">${JSON.stringify(voteChain.chain, null, 2)}</pre>

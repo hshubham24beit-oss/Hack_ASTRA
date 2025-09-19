@@ -5,94 +5,18 @@
   <title>Admin Panel - VoteChain</title>
   <link rel="stylesheet" href="style.css">
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f3f3f3;
-      margin: 0;
-      padding: 0;
-    }
-    .navbar {
-      background: #333;
-      color: #fff;
-      padding: 15px 25px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .navbar .brand {
-      font-size: 22px;
-      font-weight: bold;
-    }
-    .navbar .nav-links a {
-      color: #fff;
-      margin-left: 15px;
-      text-decoration: none;
-    }
-    h1, h2 {
-      text-align: center;
-      color: #333;
-    }
-    .container {
-      max-width: 700px;
-      margin: 20px auto;
-      background: #fff;
-      padding: 25px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-    input, button {
-      width: 100%;
-      padding: 10px;
-      margin: 10px 0;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-    }
-    button {
-      background: #4CAF50;
-      color: #fff;
-      border: none;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #45a049;
-    }
-    .election-list {
-      margin-top: 30px;
-    }
-    .election-item {
-      background: #f9f9f9;
-      border: 1px solid #ddd;
-      padding: 15px;
-      border-radius: 6px;
-      margin-bottom: 15px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .publish-btn {
-      background: #2196F3;
-      color: #fff;
-      border: none;
-      padding: 8px 12px;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    .publish-btn:disabled {
-      background: #ccc;
-      cursor: not-allowed;
-    }
+    body { font-family: Arial, sans-serif; background: #f3f3f3; padding: 20px; }
+    h1 { text-align: center; }
+    .container { max-width: 700px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    input, button { width: 100%; margin: 10px 0; padding: 10px; border-radius: 5px; border: 1px solid #ccc; }
+    button { background: #0077cc; color: white; cursor: pointer; }
+    button:hover { background: #005fa3; }
+    .election-item { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; background: #fafafa; }
+    .publish-btn { background: green; color: white; border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; }
+    .publish-btn:disabled { background: gray; cursor: not-allowed; }
   </style>
 </head>
 <body>
-
-  <header class="navbar">
-    <div class="brand">🏛️ VoteChain Admin</div>
-    <div class="nav-links">
-      <a href="index.html">Home</a>
-      <a href="voter.html">Voter Panel</a>
-      <a href="/results">View Results</a>
-    </div>
-  </header>
 
   <h1>🛡️ Admin Panel</h1>
 
@@ -116,10 +40,9 @@
 
   <script>
     function formatDateTime(dt) {
-  const d = new Date(dt);
-  return d.toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
-}
-
+      if (!dt) return "N/A";
+      return new Date(dt).toLocaleString();
+    }
 
     function loadElections() {
       fetch("/elections")

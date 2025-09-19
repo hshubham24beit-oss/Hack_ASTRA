@@ -5,49 +5,14 @@
   <title>Voter Panel - VoteChain</title>
   <link rel="stylesheet" href="style.css">
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f3f3f3;
-      padding: 20px;
-    }
-    h1 {
-      text-align: center;
-      color: #333;
-    }
-    .voter-info {
-      text-align: center;
-      margin-top: 10px;
-      font-size: 18px;
-      color: #0077cc;
-      font-weight: bold;
-    }
-    .container {
-      max-width: 600px;
-      background: #fff;
-      padding: 25px;
-      margin: 20px auto;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-    label {
-      font-weight: bold;
-    }
-    select, button {
-      width: 100%;
-      padding: 10px;
-      margin: 10px 0;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-    }
-    button {
-      background: #4CAF50;
-      color: #fff;
-      border: none;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #45a049;
-    }
+    body { font-family: Arial, sans-serif; background: #f3f3f3; padding: 20px; }
+    h1 { text-align: center; }
+    .voter-info { text-align: center; margin-top: 10px; font-size: 18px; color: #0077cc; font-weight: bold; }
+    .container { max-width: 600px; background: white; padding: 25px; margin: 20px auto; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    label { font-weight: bold; }
+    select, button { width: 100%; padding: 10px; margin: 10px 0; border-radius: 5px; border: 1px solid #ccc; }
+    button { background: #4CAF50; color: #fff; border: none; cursor: pointer; }
+    button:hover { background: #45a049; }
   </style>
 </head>
 <body>
@@ -85,7 +50,7 @@
 
     let electionsData = [];
 
-    // Load active elections
+    // Load elections
     fetch("/elections")
       .then(res => res.json())
       .then(data => {
@@ -136,9 +101,10 @@
         body: JSON.stringify({ voterId, electionId, candidate })
       })
       .then(res => res.text())
-      .then(() => {
-        // ✅ After vote, redirect to their personal results
-        window.location.href = `/results?voterId=${voterId}`;
+      .then(html => {
+        document.open();
+        document.write(html);   // ✅ Show success page (with redirect to home in 3s)
+        document.close();
       });
     });
   </script>
