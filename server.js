@@ -265,9 +265,13 @@ app.post("/publish-results/:id", async (req, res, next) => {
 /* ==========================================================
    RESULTS PAGE
    ========================================================== */
+/* ==========================================================
+   RESULTS PAGE (Latest election + History option)
+   ========================================================== */
 app.get("/results", async (req, res, next) => {
   try {
-    const published = await Election.find({ published: true });
+    const published = await Election.find({ published: true }).sort({ endDate: -1 });
+
     if (!published.length) {
       return res.send(`
         <html><head><meta charset="utf-8">
@@ -280,26 +284,38 @@ app.get("/results", async (req, res, next) => {
       `);
     }
 
-    const allResults = published
-      .map(
-        (e) => `
+    // ✅ Show only the latest election
+    const latest = published[0];
+    const latestResults = `
+      <div class="election-card">
+        <h3>${latest.title}</h3>
+        <div class="candidate-list">
+          ${latest.candidates.map(c => `
+            <div class="candidate">
+              <span>${c}</span>
+              <span class="vote-count">${latest.votes[c]} votes</span>
+            </div>
+          `).join("")}
+        </div>
+        <p><small>🕒 ${latest.startDate.toLocaleString()} - ${latest.endDate.toLocaleString()}</small></p>
+      </div>
+    `;
+
+    // ✅ All past results (history section)
+    const historyResults = published.map(e => `
       <div class="election-card">
         <h3>${e.title}</h3>
         <div class="candidate-list">
-          ${e.candidates
-            .map(
-              (c) => `
+          ${e.candidates.map(c => `
             <div class="candidate">
               <span>${c}</span>
               <span class="vote-count">${e.votes[c]} votes</span>
-            </div>`
-            )
-            .join("")}
+            </div>
+          `).join("")}
         </div>
+        <p><small>🕒 ${e.startDate.toLocaleString()} - ${e.endDate.toLocaleString()}</small></p>
       </div>
-    `
-      )
-      .join("");
+    `).join("");
 
     res.send(`
       <html><head><meta charset="utf-8">
@@ -314,9 +330,14 @@ app.get("/results", async (req, res, next) => {
               <a href="voter.html">Voter Panel</a>
             </div>
           </header>
+
           <div class="content">
-            <h1>📢 Published Election Results</h1>
-            ${allResults}
+            <h1>📢 Latest Published Election Result</h1>
+            ${latestResults}
+
+            <h2>📜 Election History</h2>
+            ${historyResults}
+
             <h2>Blockchain Ledger</h2>
             <pre class="ledger">${JSON.stringify(voteChain.chain, null, 2)}</pre>
             <a href="/" class="back-link">🏠 Back to Home</a>
@@ -327,6 +348,7 @@ app.get("/results", async (req, res, next) => {
     next(err);
   }
 });
+
 
 /* ------------------------- ERROR HANDLER ------------------------- */
 app.use((err, req, res, next) => {
