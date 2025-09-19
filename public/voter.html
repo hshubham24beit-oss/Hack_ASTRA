@@ -26,10 +26,11 @@
         <option value="">Loading elections...</option>
       </select>
 
-      <label for="candidateSelect">Select Candidate</label>
-      <select id="candidateSelect" required>
-        <option value="">Select an election first</option>
-      </select>
+      <div id="candidatesContainer">
+  <p><strong>Select Candidate:</strong></p>
+  <!-- Radio buttons will load here -->
+</div>
+
 
       <button type="submit">Vote</button>
     </form>
@@ -115,12 +116,23 @@ electionSelect.addEventListener("change", updateCandidates);
 function updateCandidates() {
   const electionId = electionSelect.value;
   const election = electionsData.find(e => e.id === electionId);
+  const container = document.getElementById("candidatesContainer");
+
   if (election && election.candidates.length) {
-    candidateSelect.innerHTML = election.candidates.map(c => `<option value="${c}">${c}</option>`).join("");
+    container.innerHTML = `
+      <p><strong>Select Candidate:</strong></p>
+      ${election.candidates.map(c => `
+        <label>
+          <input type="radio" name="candidate" value="${c}" required>
+          ${c}
+        </label><br>
+      `).join("")}
+    `;
   } else {
-    candidateSelect.innerHTML = '<option value="">No candidates</option>';
+    container.innerHTML = "<p>No candidates available.</p>";
   }
 }
+
 
 /* populate dispute election dropdown — call only AFTER electionsData is set */
 function populateDisputeElection() {
@@ -135,7 +147,8 @@ function populateDisputeElection() {
 voterForm.addEventListener('submit', function(e) {
   e.preventDefault();
   const electionId = electionSelect.value;
-  const candidate = candidateSelect.value;
+  const candidate = document.querySelector('input[name="candidate"]:checked')?.value;
+
   if (!electionId || !candidate) { alert("Please select election and candidate"); return; }
 
   fetch('/cast-vote', {
