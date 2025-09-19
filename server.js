@@ -198,10 +198,14 @@ app.post("/cast-vote", async (req, res, next) => {
     if (!election.candidates.includes(candidate))
       return res.send(`<div class="vote-message error">Invalid candidate. <a href="/voter.html">Choose again</a></div>`);
 
-    election.votes[candidate] += 1;
+    // ✅ Increment votes safely
+    election.votes[candidate] = (election.votes[candidate] || 0) + 1;
+    election.markModified("votes");   // <-- VERY IMPORTANT
     election.voted.push(voterId);
+
     await election.save();
 
+    // Add to blockchain
     const newBlock = new Block(
       voteChain.chain.length,
       Date.now().toString(),
@@ -223,6 +227,7 @@ app.post("/cast-vote", async (req, res, next) => {
     next(err);
   }
 });
+
 
 /* ==========================================================
    PUBLISH RESULTS
