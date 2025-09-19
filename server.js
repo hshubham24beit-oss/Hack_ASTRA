@@ -258,6 +258,65 @@ app.post("/publish-results/:id", async (req, res, next) => {
 });
 
 /* ==========================================================
+   VIEW ONLY VOTER'S OWN ELECTION RESULTS
+   ========================================================== */
+app.get("/my-results", async (req, res, next) => {
+  try {
+    const { voterId } = req.query;
+    if (!voterId) return res.send("Missing voterId");
+
+    const elections = await Election.find({ published: true, voted: voterId });
+    if (!elections.length) {
+      return res.send(`
+        <html><head><meta charset="utf-8">
+        <title>My Results - VoteChain</title>
+        <link rel="stylesheet" href="/style.css"></head>
+        <body class="no-results">
+          <h2>You haven't voted in any published elections yet.</h2>
+          <a href="/" class="back-link">🏠 Back to Home</a>
+        </body></html>
+      `);
+    }
+
+    const resultsHTML = elections.map(e => `
+      <div class="election-card">
+        <h3>${e.title}</h3>
+        <div class="candidate-list">
+          ${e.candidates.map(c => `
+            <div class="candidate">
+              <span>${c}</span>
+              <span class="vote-count">${e.votes[c]} votes</span>
+            </div>
+          `).join("")}
+        </div>
+      </div>
+    `).join("");
+
+    res.send(`
+      <html><head><meta charset="utf-8">
+        <title>My Results - VoteChain</title>
+        <link rel="stylesheet" href="/style.css"></head>
+      <body>
+        <header class="navbar">
+          <div class="brand">🏛️ VoteChain</div>
+          <div class="nav-links">
+            <a href="/">Home</a>
+            <a href="voter.html">Voter Panel</a>
+          </div>
+        </header>
+        <div class="content">
+          <h1>📢 Your Election Results</h1>
+          ${resultsHTML}
+          <a href="/" class="back-link">🏠 Back to Home</a>
+        </div>
+      </body></html>
+    `);
+  } catch (err) {
+    next(err);
+  }
+});
+
+/* ==========================================================
    RESULTS PAGE
    ========================================================== */
 app.get("/results", async (req, res, next) => {
