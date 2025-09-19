@@ -24,7 +24,11 @@
     <h2>Create New Election</h2>
     <form method="POST" action="/create-election">
       <input type="text" name="title" placeholder="Election Title" required>
-      <input type="text" name="candidates" placeholder="Candidate names (comma separated)" required>
+      <div id="candidatesContainer">
+  <input type="text" name="candidates[]" placeholder="Candidate Name" required>
+</div>
+<button type="button" onclick="addCandidate()">➕ Add Candidate</button>
+
       <label><strong>Start Date & Time</strong></label>
       <input type="datetime-local" name="startDate" required>
       <label><strong>End Date & Time</strong></label>
@@ -87,6 +91,16 @@
     }
 
     loadElections();
+
+    function addCandidate() {
+    const container = document.getElementById("candidatesContainer");
+    const input = document.createElement("input");
+    input.type = "text";
+    input.name = "candidates[]";
+    input.placeholder = "Candidate Name";
+    input.required = true;
+    container.appendChild(input);
+  }
   </script>
 
   <script>

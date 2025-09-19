@@ -156,9 +156,7 @@ app.post("/create-election", async (req, res, next) => {
       return res.send("Please provide title, candidates, startDate, and endDate");
     }
 
-    const candidateArray = Array.isArray(candidates)
-      ? candidates
-      : candidates.split(",").map((c) => c.trim());
+    const candidateArray = Array.isArray(candidates) ? candidates : [candidates];
 
     const votesObj = {};
     candidateArray.forEach((c) => (votesObj[c] = 0));
