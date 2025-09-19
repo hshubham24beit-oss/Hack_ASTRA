@@ -305,32 +305,65 @@ app.get("/results", async (req, res, next) => {
       </div>
     `).join("");
 
+    // ✅ Only include blockchain blocks from published elections
+    const publishedTitles = published.map(e => e.title);
+    const ledgerHtml = voteChain.chain
+      .filter(block => block.data && publishedTitles.includes(block.data.election))
+      .map(block => `
+        <div class="block">
+          <h4>🧱 Block #${block.index}</h4>
+          <p><strong>Timestamp:</strong> ${block.timestamp}</p>
+          <p><strong>Election:</strong> ${block.data.election}</p>
+          <p><strong>Voter:</strong> ${block.data.voterId}</p>
+          <p><strong>Candidate:</strong> ${block.data.candidate}</p>
+          <p><strong>Hash:</strong> ${block.hash}</p>
+          <p><strong>Prev Hash:</strong> ${block.previousHash}</p>
+        </div>
+      `).join("");
+
     res.send(`
       <html><head><meta charset="utf-8">
         <title>Results - VoteChain</title>
-        <link rel="stylesheet" href="/style.css"></head>
-        <body>
-          <header class="navbar">
-            <div class="brand">🏛️ VoteChain</div>
-            <div class="nav-links">
-              <a href="/">Home</a>
-              <a href="admin.html">Admin Panel</a>
-              <a href="voter.html">Voter Panel</a>
-            </div>
-          </header>
-          <div class="content">
-            <h1>📢 Live Election Results</h1>
-            ${allResults}
-            
-            <h2>🔗 Blockchain Ledger</h2>
-            <pre class="ledger">${JSON.stringify(voteChain.chain, null, 2)}</pre>
+        <link rel="stylesheet" href="/style.css">
+        <style>
+          .block {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 6px;
+            box-shadow: 0 0 4px rgba(0,0,0,0.1);
+            font-family: monospace;
+          }
+          .block h4 {
+            margin: 0 0 8px 0;
+            color: #0077cc;
+          }
+        </style>
+      </head>
+      <body>
+        <header class="navbar">
+          <div class="brand">🏛️ VoteChain</div>
+          <div class="nav-links">
+            <a href="/">Home</a>
+            <a href="admin.html">Admin Panel</a>
+            <a href="voter.html">Voter Panel</a>
           </div>
-        </body></html>
+        </header>
+        <div class="content">
+          <h1>📢 Live Election Results</h1>
+          ${allResults}
+          
+          <h2>🔗 Blockchain Ledger</h2>
+          ${ledgerHtml || "<p>No votes recorded yet.</p>"}
+        </div>
+      </body></html>
     `);
   } catch (err) {
     next(err);
   }
 });
+
 
 
 
