@@ -210,14 +210,13 @@ app.post("/cast-vote", async (req, res, next) => {
     res.send(`
   <html><head><meta charset="utf-8"><title>Vote Cast</title>
   <link rel="stylesheet" href="/style.css">
-  </head>
+  <meta http-equiv="refresh" content="3;url=/voter.html" /></head>
   <body><div class="vote-message success">
     ✅ Your vote for <strong>${candidate}</strong> in <strong>${election.title}</strong> is recorded.
-    <br><br>
-    <a href="/voter.html">Back to Voter Panel</a> |
-    <a href="/results?voterId=${voterId}">View Results</a>
+    <br><br><a href="/voter.html">Back to Voter Panel</a>
   </div></body></html>
 `);
+
 
   } catch (err) {
     next(err);
