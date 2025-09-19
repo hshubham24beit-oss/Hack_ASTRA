@@ -136,22 +136,26 @@ app.post("/create-election", async (req, res, next) => {
       return res.send("Please provide title, candidates, startDate, and endDate");
     }
 
-    // 🔑 Ensure candidates are stored as an array
     const candidateArray = Array.isArray(candidates)
       ? candidates
-      : candidates.split(",").map(c => c.trim()).filter(c => c.length > 0);
+      : candidates.split(",").map((c) => c.trim());
 
     const votesObj = {};
-    candidateArray.forEach(c => votesObj[c] = 0);
+    candidateArray.forEach((c) => (votesObj[c] = 0));
+
+    // ✅ Convert IST → UTC before saving
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    const startUTC = new Date(new Date(startDate).getTime() - istOffset);
+    const endUTC = new Date(new Date(endDate).getTime() - istOffset);
 
     await Election.create({
       title,
-      candidates: candidateArray,   // ✅ Save as array
+      candidates: candidateArray,
       votes: votesObj,
       voted: [],
       published: false,
-      startDate: new Date(startDate),
-      endDate: new Date(endDate),
+      startDate: startUTC,
+      endDate: endUTC,
     });
 
     res.send(`
