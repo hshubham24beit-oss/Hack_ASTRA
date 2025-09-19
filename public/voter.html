@@ -48,15 +48,6 @@
     button:hover {
       background: #45a049;
     }
-
-    /* extra style for view results button */
-    #viewMyResultsBtn {
-      background: #0077cc;
-      margin-top: 15px;
-    }
-    #viewMyResultsBtn:hover {
-      background: #005fa3;
-    }
   </style>
 </head>
 <body>
@@ -77,9 +68,6 @@
 
       <button type="submit">Vote</button>
     </form>
-
-    <!-- ✅ New Button to view only the elections this voter voted in -->
-    <button type="button" id="viewMyResultsBtn">View My Results</button>
   </div>
 
   <script>
@@ -148,16 +136,10 @@
         body: JSON.stringify({ voterId, electionId, candidate })
       })
       .then(res => res.text())
-      .then(html => {
-        document.open();
-        document.write(html);
-        document.close();
+      .then(() => {
+        // ✅ After vote, redirect to their personal results
+        window.location.href = `/results?voterId=${voterId}`;
       });
-    });
-
-    // ✅ View My Results button click
-    document.getElementById('viewMyResultsBtn').addEventListener('click', () => {
-      window.location.href = `/my-results/${voterId}`;
     });
   </script>
 </body>

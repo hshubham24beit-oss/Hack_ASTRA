@@ -88,7 +88,30 @@ app.post("/login", async (req, res, next) => {
 /* ==========================================================
    GET ACTIVE ELECTIONS
    ========================================================== */
+app.get("/elections", async (req, res, next) => {
+  try {
+    const nowUTC = new Date();
+    const nowIST = new Date(nowUTC.getTime() + 5.5 * 60 * 60 * 1000);
 
+    const elections = await Election.find({
+      startDate: { $lte: nowIST },
+      endDate: { $gte: nowIST },
+    });
+
+    res.json(
+      elections.map((e) => ({
+        id: e._id.toString(),
+        title: e.title,
+        candidates: e.candidates,
+        published: e.published,
+        startDate: e.startDate,
+        endDate: e.endDate,
+      }))
+    );
+  } catch (err) {
+    next(err);
+  }
+});
 
 /* ==========================================================
    HOME PAGE
@@ -106,34 +129,7 @@ app.post("/create-election", async (req, res, next) => {
 
     if (!title || !candidates || !startDate || !endDate) {
       return res.send("Please provide title, candidates, startDate, and endDate");
-    }app.get("/elections", async (req, res, next) => {
-  try {
-    // Get current UTC time
-    const nowUTC = new Date();
-
-    // Convert to IST by adding +5:30 (in ms)
-    const nowIST = new Date(nowUTC.getTime() + (5.5 * 60 * 60 * 1000));
-
-    const elections = await Election.find({
-      startDate: { $lte: nowIST },
-      endDate: { $gte: nowIST }
-    });
-
-    res.json(
-      elections.map((e) => ({
-        id: e._id.toString(),
-        title: e.title,
-        candidates: e.candidates,
-        published: e.published,
-        startDate: e.startDate,
-        endDate: e.endDate
-      }))
-    );
-  } catch (err) {
-    next(err);
-  }
-});
-
+    }
 
     const candidateArray = Array.isArray(candidates)
       ? candidates
@@ -198,14 +194,11 @@ app.post("/cast-vote", async (req, res, next) => {
     if (!election.candidates.includes(candidate))
       return res.send(`<div class="vote-message error">Invalid candidate. <a href="/voter.html">Choose again</a></div>`);
 
-    // ✅ Increment votes safely
     election.votes[candidate] = (election.votes[candidate] || 0) + 1;
-    election.markModified("votes");   // <-- VERY IMPORTANT
+    election.markModified("votes");
     election.voted.push(voterId);
-
     await election.save();
 
-    // Add to blockchain
     const newBlock = new Block(
       voteChain.chain.length,
       Date.now().toString(),
@@ -214,70 +207,39 @@ app.post("/cast-vote", async (req, res, next) => {
     );
     voteChain.addBlock(newBlock);
 
-    res.send(`
-      <html><head><meta charset="utf-8"><title>Vote Cast</title>
-      <link rel="stylesheet" href="/style.css">
-      <meta http-equiv="refresh" content="3;url=/" /></head>
-      <body><div class="vote-message success">
-        ✅ Your vote for <strong>${candidate}</strong> in <strong>${election.title}</strong> is recorded.
-        <br><br><a href="/">Back to Home</a>
-      </div></body></html>
-    `);
+    res.redirect(`/results?voterId=${voterId}`);
   } catch (err) {
     next(err);
   }
 });
 
-
 /* ==========================================================
-   PUBLISH RESULTS
-   ========================================================== */
-app.post("/publish-results/:id", async (req, res, next) => {
-  try {
-    const election = await Election.findById(req.params.id);
-    if (!election) return res.send("Election not found");
-
-    election.published = true;
-    await election.save();
-
-    res.send(`
-      <html><head><meta charset="utf-8">
-        <title>Published</title>
-        <link rel="stylesheet" href="/style.css">
-        <meta http-equiv="refresh" content="2;url=/" />
-      </head><body>
-        <div class="result-message success">
-          📢 Results for "<strong>${election.title}</strong>" have been published.
-          <br><br><a href="/">Go Back</a>
-        </div>
-      </body></html>
-    `);
-  } catch (err) {
-    next(err);
-  }
-});
-
-
-
-/* ==========================================================
-   RESULTS PAGE
+   RESULTS PAGE (ONLY VOTED ELECTIONS)
    ========================================================== */
 app.get("/results", async (req, res, next) => {
   try {
-    const published = await Election.find({ published: true });
-    if (!published.length) {
+    const { voterId } = req.query;
+
+    let filter = { published: true };
+    if (voterId) {
+      filter.voted = voterId;
+    }
+
+    const elections = await Election.find(filter);
+
+    if (!elections.length) {
       return res.send(`
         <html><head><meta charset="utf-8">
         <title>Results - VoteChain</title>
         <link rel="stylesheet" href="/style.css"></head>
         <body class="no-results">
-          <h2>No results are published yet.</h2>
+          <h2>No results found yet.</h2>
           <a href="/" class="back-link">🏠 Back to Home</a>
         </body></html>
       `);
     }
 
-    const allResults = published
+    const allResults = elections
       .map(
         (e) => `
       <div class="election-card">
@@ -312,7 +274,7 @@ app.get("/results", async (req, res, next) => {
             </div>
           </header>
           <div class="content">
-            <h1>📢 Published Election Results</h1>
+            <h1>📢 Election Results</h1>
             ${allResults}
             <h2>Blockchain Ledger</h2>
             <pre class="ledger">${JSON.stringify(voteChain.chain, null, 2)}</pre>
@@ -323,48 +285,6 @@ app.get("/results", async (req, res, next) => {
   } catch (err) {
     next(err);
   }
-});
-
-app.get("/my-results/:voterId", async (req, res) => {
-  const { voterId } = req.params;
-
-  const elections = await Election.find({ voted: voterId, published: true });
-
-  if (!elections.length) {
-    return res.send(`
-      <html><head><meta charset="utf-8">
-      <title>My Results</title>
-      <link rel="stylesheet" href="/style.css"></head>
-      <body><h2>No results found for your votes.</h2>
-      <a href="/voter.html" class="back-link">Back to Voter Panel</a>
-      </body></html>
-    `);
-  }
-
-  const resultsHtml = elections.map(e => `
-    <div class="election-card">
-      <h3>${e.title}</h3>
-      <div class="candidate-list">
-        ${e.candidates.map(c => `
-          <div class="candidate">
-            <span>${c}</span>
-            <span class="vote-count">${e.votes[c]} votes</span>
-          </div>
-        `).join("")}
-      </div>
-    </div>
-  `).join("");
-
-  res.send(`
-    <html><head><meta charset="utf-8">
-    <title>My Results</title>
-    <link rel="stylesheet" href="/style.css"></head>
-    <body>
-      <h1>📢 Your Voted Election Results</h1>
-      ${resultsHtml}
-      <a href="/voter.html" class="back-link">Back to Voter Panel</a>
-    </body></html>
-  `);
 });
 
 /* ------------------------- ERROR HANDLER ------------------------- */
