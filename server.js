@@ -91,7 +91,7 @@ app.post("/login", async (req, res, next) => {
 app.get("/elections", async (req, res, next) => {
   try {
     const nowUTC = new Date();
-    const nowIST = new Date(nowUTC.getTime() + 5.5 * 60 * 60 * 1000);
+    const nowIST = new Date(nowUTC.getTime() + (5.5 * 60 * 60 * 1000));
 
     const elections = await Election.find({
       startDate: { $lte: nowIST },
@@ -162,7 +162,6 @@ app.post("/create-election", async (req, res, next) => {
       </body></html>
     `);
   } catch (err) {
-    console.error("❌ Error creating election:", err);
     next(err);
   }
 });
@@ -197,6 +196,7 @@ app.post("/cast-vote", async (req, res, next) => {
     election.votes[candidate] = (election.votes[candidate] || 0) + 1;
     election.markModified("votes");
     election.voted.push(voterId);
+
     await election.save();
 
     const newBlock = new Block(
@@ -208,94 +208,90 @@ app.post("/cast-vote", async (req, res, next) => {
     voteChain.addBlock(newBlock);
 
     res.send(`
-  <html><head><meta charset="utf-8"><title>Vote Cast</title>
-  <link rel="stylesheet" href="/style.css">
-  </head>
-  <body><div class="vote-message success">
-    ✅ Your vote for <strong>${candidate}</strong> in <strong>${election.title}</strong> is recorded.
-    <br><br>
-    <a href="/voter.html">Back to Voter Panel</a> |
-    <a href="/results?voterId=${voterId}">View Results</a>
-  </div></body></html>
-`);
-
+      <html><head><meta charset="utf-8"><title>Vote Cast</title>
+      <link rel="stylesheet" href="/style.css">
+      <meta http-equiv="refresh" content="3;url=/voter.html" /></head>
+      <body><div class="vote-message success">
+        ✅ Your vote for <strong>${candidate}</strong> in <strong>${election.title}</strong> is recorded.
+        <br><br>Redirecting to voter panel...
+      </div></body></html>
+    `);
   } catch (err) {
     next(err);
   }
 });
 
 /* ==========================================================
-   RESULTS PAGE (ONLY VOTED ELECTIONS)
+   PUBLISH RESULTS
    ========================================================== */
-app.get("/results", async (req, res, next) => {
+app.post("/publish-results/:id", async (req, res, next) => {
   try {
-    const { voterId } = req.query;
+    const election = await Election.findById(req.params.id);
+    if (!election) return res.send("Election not found");
 
-    let filter = { published: true };
-    if (voterId) {
-      filter.voted = voterId;
-    }
-
-    const elections = await Election.find(filter);
-
-    if (!elections.length) {
-      return res.send(`
-        <html><head><meta charset="utf-8">
-        <title>Results - VoteChain</title>
-        <link rel="stylesheet" href="/style.css"></head>
-        <body class="no-results">
-          <h2>No results found yet.</h2>
-          <a href="/" class="back-link">🏠 Back to Home</a>
-        </body></html>
-      `);
-    }
-
-    const allResults = elections
-      .map(
-        (e) => `
-      <div class="election-card">
-        <h3>${e.title}</h3>
-        <div class="candidate-list">
-          ${e.candidates
-            .map(
-              (c) => `
-            <div class="candidate">
-              <span>${c}</span>
-              <span class="vote-count">${e.votes[c]} votes</span>
-            </div>`
-            )
-            .join("")}
-        </div>
-      </div>
-    `
-      )
-      .join("");
+    election.published = true;
+    await election.save();
 
     res.send(`
       <html><head><meta charset="utf-8">
-        <title>Results - VoteChain</title>
-        <link rel="stylesheet" href="/style.css"></head>
-        <body>
-          <header class="navbar">
-            <div class="brand">🏛️ VoteChain</div>
-            <div class="nav-links">
-              <a href="/">Home</a>
-              <a href="admin.html">Admin Panel</a>
-              <a href="voter.html">Voter Panel</a>
-            </div>
-          </header>
-          <div class="content">
-            <h1>📢 Election Results</h1>
-            ${allResults}
-            <h2>Blockchain Ledger</h2>
-            <pre class="ledger">${JSON.stringify(voteChain.chain, null, 2)}</pre>
-            <a href="/" class="back-link">🏠 Back to Home</a>
-          </div>
-        </body></html>
+        <title>Published</title>
+        <link rel="stylesheet" href="/style.css">
+        <meta http-equiv="refresh" content="2;url=/" />
+      </head><body>
+        <div class="result-message success">
+          📢 Results for "<strong>${election.title}</strong>" have been published.
+          <br><br><a href="/">Go Back</a>
+        </div>
+      </body></html>
     `);
   } catch (err) {
     next(err);
   }
+});
+
+/* ==========================================================
+   VIEW ONLY MY RESULTS
+   ========================================================== */
+app.get("/my-results/:voterId", async (req, res) => {
+  const { voterId } = req.params;
+
+  const elections = await Election.find({ voted: voterId, published: true });
+
+  if (!elections.length) {
+    return res.send(`
+      <html><head><meta charset="utf-8">
+      <title>My Results</title>
+      <link rel="stylesheet" href="/style.css"></head>
+      <body><h2>No results found for your votes.</h2>
+      <a href="/voter.html" class="back-link">Back to Voter Panel</a>
+      </body></html>
+    `);
+  }
+
+  const resultsHtml = elections.map(e => `
+    <div class="election-card">
+      <h3>${e.title}</h3>
+      <div class="candidate-list">
+        ${e.candidates.map(c => `
+          <div class="candidate">
+            <span>${c}</span>
+            <span class="vote-count">${e.votes[c]} votes</span>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  `).join("");
+
+  res.send(`
+    <html><head><meta charset="utf-8">
+    <title>My Results</title>
+    <link rel="stylesheet" href="/style.css"></head>
+    <body>
+      <h1>📢 Your Voted Election Results</h1>
+      ${resultsHtml}
+      <a href="/voter.html" class="back-link">Back to Voter Panel</a>
+    </body></html>
+  `);
 });
 
 /* ------------------------- ERROR HANDLER ------------------------- */
