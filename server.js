@@ -74,6 +74,41 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 let voteChain = new Blockchain();
 
+app.post("/auth/verify-token", async (req, res) => {
+  try {
+    const { idToken, role } = req.body;
+    if (!idToken) return res.status(400).json({ success: false, message: "Missing token" });
+
+    // Verify token with Firebase Admin
+    const decoded = await admin.auth().verifyIdToken(idToken);
+    const email = decoded.email;
+
+    // ✅ For Admin role
+    if (role === "admin") {
+      return res.json({ success: true, role: "admin", email });
+    }
+
+    // ✅ For Voter role
+    if (role === "voter") {
+      let voter = await Voter.findOne({ email });
+      if (!voter) {
+        voter = await Voter.create({
+          email,
+          password: "firebase", // dummy password (since Firebase handles auth)
+          voterId: "VOTER-" + Math.random().toString(36).substring(2, 10).toUpperCase(),
+        });
+      }
+      return res.json({ success: true, role: "voter", voterId: voter.voterId, email });
+    }
+
+    res.status(400).json({ success: false, message: "Invalid role" });
+  } catch (err) {
+    console.error("❌ Firebase verify error:", err);
+    res.status(401).json({ success: false, message: "Unauthorized" });
+  }
+});
+
+
 /* ==========================================================
    LOGIN ROUTE
    ========================================================== */
@@ -421,26 +456,7 @@ app.post("/resolve-dispute/:id", async (req, res, next) => {
   } catch(err) { next(err); }
 });
 
-app.post("/auth/verify-token", async (req, res) => {
-  try {
-    const { idToken, role } = req.body;
-    const decoded = await admin.auth().verifyIdToken(idToken);
 
-    // ✅ Allow any Firebase-authenticated user
-    if (role === "admin") {
-      return res.json({ success: true, role: "admin", email: decoded.email });
-    }
-
-    if (role === "voter") {
-      return res.json({ success: true, role: "voter", voterId: decoded.uid, email: decoded.email });
-    }
-
-    res.json({ success: false, message: "Invalid role" });
-  } catch (err) {
-    console.error("❌ Firebase token verification failed:", err);
-    res.json({ success: false, message: "Authentication failed" });
-  }
-});
 
 
 /* ------------------------- ERROR HANDLER ------------------------- */

@@ -4,141 +4,94 @@
   <meta charset="utf-8">
   <title>Admin Login - VoteChain</title>
   <link rel="stylesheet" href="style.css">
-  <!-- Using Firebase compat builds so code matches older examples -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-  <style>
-    /* Small fallback styles so page looks okay if style.css missing */
-    .container { max-width:420px; margin:30px auto; background:#fff; padding:20px; border-radius:8px; box-shadow:0 6px 20px rgba(0,0,0,0.08); }
-    input, button { width:100%; padding:10px; margin:8px 0; border-radius:6px; border:1px solid #ccc; }
-    button { background:#0077cc; color:#fff; border:none; cursor:pointer; }
-    #resendBtn { background:#f0ad4e; }
-    .small { font-size:14px; color:#444; text-align:center; margin-top:8px; }
-  </style>
 </head>
 <body>
   <h1 style="text-align:center;">🛡️ Admin Login</h1>
   <div class="container">
     <form id="adminLoginForm">
-      <input type="email" id="email" placeholder="Email" required />
+      <input type="email" id="email" placeholder="Admin Email" required />
       <input type="password" id="password" placeholder="Password" required />
-      <button type="submit">Login</button>
-      <button id="resendBtn" type="button">Resend verification email</button>
+      <button type="submit">Login with Email</button>
     </form>
-    <div class="small">If you're new, an account will be created and verification email sent.</div>
+
+    <button id="googleBtn">Login with Google</button>
     <div id="msg" style="margin-top:10px;color:#b33;"></div>
   </div>
 
   <script>
-    // ---------- Firebase config (use your project's config) ----------
+    // ✅ Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyBLCWcNSRxox56IbkahS4rNwTVIPCnFW9Q",
       authDomain: "vote-chain-78885.firebaseapp.com",
       projectId: "vote-chain-78885",
       storageBucket: "vote-chain-78885.firebasestorage.app",
       messagingSenderId: "575284193703",
-      appId: "1:575284193703:web:ecad4994f0311b7bcbae82",
-      measurementId: "G-FMKST3HZV5"
+      appId: "1:575284193703:web:ecad4994f0311b7bcbae82"
     };
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
-
     const msgEl = document.getElementById('msg');
+    function showMsg(t){ msgEl.innerText=t; setTimeout(()=>msgEl.innerText='',6000); }
 
-    // Helper to display messages
-    function showMsg(t) { msgEl.innerText = t; setTimeout(()=> msgEl.innerText = '', 6000); }
-
-    // Login flow
-    document.getElementById('adminLoginForm').addEventListener('submit', async (e) => {
+    // ---------- Email/Password Login ----------
+    document.getElementById('adminLoginForm').addEventListener('submit', async (e)=>{
       e.preventDefault();
-      const email = document.getElementById('email').value.trim();
-      const password = document.getElementById('password').value;
+      const email=document.getElementById('email').value.trim();
+      const password=document.getElementById('password').value;
 
       try {
-        // Try to sign in
-        const userCred = await auth.signInWithEmailAndPassword(email, password);
-        const user = userCred.user;
+        const userCred=await auth.signInWithEmailAndPassword(email,password);
+        const user=userCred.user;
 
-        if (!user.emailVerified) {
-          // send verification again & block login
+        if(!user.emailVerified){
           await user.sendEmailVerification();
           await auth.signOut();
-          return showMsg('Email not verified. Verification sent — check your inbox (and spam).');
+          return showMsg("Please verify your email. Verification link sent.");
         }
 
-        // Verified => get id token and call server to verify role
-        const idToken = await user.getIdToken();
-        const res = await fetch('/auth/verify-token', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ idToken, role: 'admin' })
+        const idToken=await user.getIdToken();
+        const res=await fetch('/auth/verify-token',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({idToken,role:'admin'})
         });
-
-        const data = await res.json().catch(()=>({success:false}));
-        if (data.success) {
-          // Allow login
-          window.location.href = '/admin.html';
-        } else {
-          // Fallback: if server not available or rejects, still allow if you want:
-          // window.location.href = '/admin.html';
-          showMsg(data.message || 'Server rejected token or verification failed.');
-        }
-      } catch (err) {
-        // If user not found -> create account and send verification
-        if (err.code === 'auth/user-not-found') {
-          try {
-            const newUserCred = await auth.createUserWithEmailAndPassword(email, password);
-            await newUserCred.user.sendEmailVerification();
+        const data=await res.json();
+        if(data.success){ window.location.href='/admin.html'; }
+        else showMsg(data.message||"Server rejected login");
+      } catch(err){
+        if(err.code==='auth/user-not-found'){
+          try{
+            const newUser=await auth.createUserWithEmailAndPassword(email,password);
+            await newUser.user.sendEmailVerification();
             await auth.signOut();
-            showMsg('Account created. Please verify your email (check spam) before login.');
-          } catch (createErr) {
-            showMsg('Signup error: ' + createErr.message);
-          }
-        } else if (err.code === 'auth/wrong-password') {
-          showMsg('Wrong password. Please try again.');
+            showMsg("Account created. Please verify your email.");
+          }catch(e){ showMsg("Signup error: "+e.message); }
         } else {
-          showMsg('Login error: ' + err.message);
+          showMsg("Login error: "+err.message);
         }
       }
     });
 
-    // Resend verification button handler
-    document.getElementById('resendBtn').addEventListener('click', async () => {
-      const email = document.getElementById('email').value.trim();
-      const password = document.getElementById('password').value;
+    // ---------- Google Login ----------
+    document.getElementById('googleBtn').addEventListener('click', async ()=>{
+      const provider=new firebase.auth.GoogleAuthProvider();
+      try{
+        const result=await auth.signInWithPopup(provider);
+        const user=result.user;
+        const idToken=await user.getIdToken();
 
-      if (!email) return showMsg('Enter email first to resend verification.');
-
-      try {
-        // Try sign in with provided password to get the user object
-        const userCred = await auth.signInWithEmailAndPassword(email, password || Math.random().toString(36).slice(-8));
-        const user = userCred.user;
-
-        if (user.emailVerified) {
-          await auth.signOut();
-          return showMsg('This email is already verified — you can login.');
-        }
-
-        await user.sendEmailVerification();
-        await auth.signOut();
-        showMsg('Verification email sent. Check inbox/spam.');
-      } catch (err) {
-        if (err.code === 'auth/user-not-found') {
-          // create user and send verification
-          try {
-            const tmpPass = password || Math.random().toString(36).slice(-8);
-            const newUser = await auth.createUserWithEmailAndPassword(email, tmpPass);
-            await newUser.user.sendEmailVerification();
-            await auth.signOut();
-            showMsg('Account created & verification sent. Verify email then login.');
-          } catch (createErr) {
-            showMsg('Error creating account: ' + createErr.message);
-          }
-        } else if (err.code === 'auth/wrong-password') {
-          showMsg('Wrong password. Enter correct password to resend verification.');
-        } else {
-          showMsg('Error: ' + err.message);
-        }
+        const res=await fetch('/auth/verify-token',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({idToken,role:'admin'})
+        });
+        const data=await res.json();
+        if(data.success){ window.location.href='/admin.html'; }
+        else showMsg(data.message||"Server rejected login");
+      }catch(err){
+        showMsg("Google sign-in error: "+err.message);
       }
     });
   </script>
