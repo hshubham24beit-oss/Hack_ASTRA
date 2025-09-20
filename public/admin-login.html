@@ -4,8 +4,7 @@
   <meta charset="utf-8">
   <title>Admin Login - VoteChain</title>
   <link rel="stylesheet" href="style.css">
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js"></script>
+  
 </head>
 <body>
   <h1 style="text-align:center;">🛡️ Admin Login</h1>
@@ -13,45 +12,48 @@
     <button id="googleLoginBtn" class="google-btn">Sign in with Google</button>
   </div>
 
-  <script>
-    // 🔧 Firebase Config
-    const firebaseConfig = {
-      apiKey: "AIzaSyBLCWcNSRxox56IbkahS4rNwTVIPCnFW9Q",
-      authDomain: "vote-chain-78885.firebaseapp.com",
-      projectId: "vote-chain-78885",
-      storageBucket: "vote-chain-78885.appspot.com",
-      messagingSenderId: "575284193703",
-      appId: "1:575284193703:web:ecad4994f0311b7bcbae82",
-      measurementId: "G-FMKST3HZV5"
-    };
+  <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
-    // ✅ Initialize Firebase
-    const app = firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const provider = new firebase.auth.GoogleAuthProvider();
+  const firebaseConfig = {
+    apiKey: "AIzaSyBLCWcNSRxox56IbkahS4rNwTVIPCnFW9Q",
+    authDomain: "vote-chain-78885.firebaseapp.com",
+    projectId: "vote-chain-78885",
+    storageBucket: "vote-chain-78885.appspot.com",
+    messagingSenderId: "575284193703",
+    appId: "1:575284193703:web:ecad4994f0311b7bcbae82",
+    measurementId: "G-FMKST3HZV5"
+  };
 
-    document.getElementById("googleLoginBtn").addEventListener("click", async () => {
-      try {
-        const result = await auth.signInWithPopup(provider);
-        const idToken = await result.user.getIdToken();
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const provider = new GoogleAuthProvider();
 
-        // Verify on backend
-        const res = await fetch('/auth/verify-token', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ idToken, role: "admin" })
-        });
+  document.getElementById("googleLoginBtn").addEventListener("click", async () => {
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const idToken = await result.user.getIdToken();
 
-        const data = await res.json();
-        if (data.success && data.role === "admin") {
-          window.location.href = '/admin.html';
-        } else {
-          alert(data.message || "Not authorized as admin");
-        }
-      } catch (err) {
-        alert("Google sign-in error: " + err.message);
+      // Send token to backend for verification
+      const res = await fetch('/auth/verify-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken, role: "admin" }) // for admin-login.html
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        window.location.href = '/admin.html';
+      } else {
+        alert(data.message || "Login failed");
       }
-    });
-  </script>
+    } catch (err) {
+      alert("Google sign-in error: " + err.message);
+    }
+  });
+</script>
+
+  
 </body>
 </html>

@@ -4,8 +4,7 @@
   <meta charset="utf-8">
   <title>Voter Login - VoteChain</title>
   <link rel="stylesheet" href="style.css">
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js"></script>
+  
 </head>
 <body>
   <h1 style="text-align:center;">🗳️ Voter Login</h1>
@@ -13,7 +12,10 @@
     <button id="googleLoginBtn" class="google-btn">Sign in with Google</button>
   </div>
 
-  <script>
+ <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+
     const firebaseConfig = {
       apiKey: "AIzaSyBLCWcNSRxox56IbkahS4rNwTVIPCnFW9Q",
       authDomain: "vote-chain-78885.firebaseapp.com",
@@ -24,16 +26,15 @@
       measurementId: "G-FMKST3HZV5"
     };
 
-    const app = firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const provider = new firebase.auth.GoogleAuthProvider();
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
 
     document.getElementById("googleLoginBtn").addEventListener("click", async () => {
       try {
-        const result = await auth.signInWithPopup(provider);
+        const result = await signInWithPopup(auth, provider);
         const idToken = await result.user.getIdToken();
 
-        // Verify on backend
         const res = await fetch('/auth/verify-token', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -41,11 +42,11 @@
         });
 
         const data = await res.json();
-        if (data.success && data.role === "voter") {
+        if (data.success) {
           localStorage.setItem("voterId", data.voterId);
           window.location.href = '/voter.html';
         } else {
-          alert(data.message || "Voter login failed");
+          alert(data.message || "Login failed");
         }
       } catch (err) {
         alert("Google sign-in error: " + err.message);
