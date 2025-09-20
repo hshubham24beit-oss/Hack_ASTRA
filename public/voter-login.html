@@ -61,7 +61,42 @@
       return await res.json();
     }
 
+    // Email/password login
+    document.getElementById('voterLoginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
 
+      try {
+        const userCred = await auth.signInWithEmailAndPassword(email, password);
+        const user = userCred.user;
+
+        if (!user.emailVerified) {
+          const resend = confirm("Your email is not verified. Do you want us to resend the verification email?");
+          if (resend) {
+            await user.sendEmailVerification();
+            alert("Verification email sent. Please check your inbox and verify.");
+          } else {
+            alert("Please verify your email before logging in.");
+          }
+          await auth.signOut();
+          return;
+        }
+
+        const idToken = await user.getIdToken();
+        const data = await verifyTokenWithServer(idToken);
+
+        if (data.success && data.role === "voter") {
+          localStorage.setItem('voterId', data.voterId);
+          window.location.href = '/voter.html';
+        } else {
+          alert(data.message || "Voter login failed!");
+          await auth.signOut();
+        }
+      } catch (err) {
+        alert("Login error: " + err.message);
+      }
+    });
 
     // Google sign-in
     document.getElementById('googleSignIn').addEventListener('click', async () => {
