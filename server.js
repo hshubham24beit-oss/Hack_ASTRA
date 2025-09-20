@@ -257,9 +257,24 @@ app.post("/cast-vote", async (req, res, next) => {
     const { voterId, candidate, electionId } = req.body;
 
     const election = await Election.findById(electionId);
-    if (!election)
+    if (!election) {
       return res.send(`<div class="vote-message error">Invalid election. <a href="/voter.html">Back</a></div>`);
+    }
 
+    // 🚨 Prevent voting if results are already published
+    if (election.published) {
+      return res.send(`
+        <html><head><meta charset="utf-8"><title>Voting Closed</title>
+        <link rel="stylesheet" href="/style.css"></head>
+        <body><div class="error-box">
+          <h1>📢 Voting Closed</h1>
+          <p>The results for "<strong>${election.title}</strong>" have already been published. You cannot vote now.</p>
+          <a href="/voter.html" class="back-btn">Back to Voter Panel</a>
+        </div></body></html>
+      `);
+    }
+
+    // 🚨 Prevent double voting
     if (election.voted.includes(voterId)) {
       return res.send(`
         <html><head><meta charset="utf-8">
@@ -273,30 +288,24 @@ app.post("/cast-vote", async (req, res, next) => {
       `);
     }
 
-    if (!election.candidates.includes(candidate))
+    // 🚨 Validate candidate
+    if (!election.candidates.includes(candidate)) {
       return res.send(`<div class="vote-message error">Invalid candidate. <a href="/voter.html">Choose again</a></div>`);
+    }
 
+    // ✅ Increment votes safely
     election.votes[candidate] = (election.votes[candidate] || 0) + 1;
-    election.markModified("votes");   
+    election.markModified("votes"); // IMPORTANT so MongoDB saves updates
     election.voted.push(voterId);
+
     await election.save();
 
-    // Blockchain record
-    const newBlock = new Block(
-      voteChain.chain.length,
-      Date.now().toString(),
-      { voterId, candidate, election: election.title },
-      voteChain.getLatestBlock().hash
-    );
-    voteChain.addBlock(newBlock);
-
-    // ✅ Redirect to HOME after vote
     res.send(`
       <html><head><meta charset="utf-8"><title>Vote Cast</title>
       <link rel="stylesheet" href="/style.css">
       <meta http-equiv="refresh" content="3;url=/" /></head>
       <body><div class="vote-message success">
-        ✅ Your vote for <strong>${candidate}</strong> in <strong>${election.title}</strong> has been recorded successfully.
+        ✅ Your vote for <strong>${candidate}</strong> in <strong>${election.title}</strong> is recorded.
         <br><br><a href="/">Back to Home</a>
       </div></body></html>
     `);
