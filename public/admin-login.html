@@ -4,139 +4,52 @@
   <meta charset="utf-8">
   <title>Admin Login - VoteChain</title>
   <link rel="stylesheet" href="style.css">
-  <!-- Use compat build so we can keep the same firebase.initializeApp() style -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-  <style>
-    /* small inline styles so page looks OK if style.css not loaded */
-    body { font-family: Arial, sans-serif; background:#f3f6fb; padding:30px; }
-    .container { max-width:420px; margin:40px auto; background:#fff; padding:20px; border-radius:10px; box-shadow:0 6px 18px rgba(20,30,60,0.08); }
-    h1 { text-align:center; margin-bottom:10px; }
-    input { width:100%; padding:10px; margin:8px 0; border-radius:6px; border:1px solid #ccd6e6; box-sizing:border-box; }
-    button { width:100%; padding:10px; margin-top:10px; border-radius:6px; border:none; background:#0b63c6; color:#fff; font-weight:600; cursor:pointer; }
-    .small-btn { background:#fff; color:#0b63c6; border:1px solid #0b63c6; }
-    .sep { text-align:center; margin:12px 0; color:#666; font-size:14px; }
-    .helper { font-size:13px; color:#666; margin-top:8px; text-align:center; }
-  </style>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js"></script>
 </head>
 <body>
-  <div class="container">
-    <h1>🛡️ Admin Login</h1>
-
-    <form id="adminLoginForm">
-      <input type="email" id="email" placeholder="Admin Email" required />
-      <input type="password" id="password" placeholder="Password" required />
-      <button type="submit">Login</button>
-    </form>
-
-    <div class="sep">or</div>
-
-    <button id="googleSignIn" class="small-btn">Sign in with Google</button>
-
-    <div class="helper">
-      If this is your first time, make sure the admin account exists in Firebase Auth and the email is verified.
-    </div>
+  <h1 style="text-align:center;">🛡️ Admin Login</h1>
+  <div class="container" style="text-align:center;">
+    <button id="googleLoginBtn" class="google-btn">Sign in with Google</button>
   </div>
 
   <script>
-    // ---------- update these values with your Firebase web config ----------
+    // 🔧 Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyBLCWcNSRxox56IbkahS4rNwTVIPCnFW9Q",
       authDomain: "vote-chain-78885.firebaseapp.com",
       projectId: "vote-chain-78885",
-      storageBucket: "vote-chain-78885.firebasestorage.app",
+      storageBucket: "vote-chain-78885.appspot.com",
       messagingSenderId: "575284193703",
       appId: "1:575284193703:web:ecad4994f0311b7bcbae82",
       measurementId: "G-FMKST3HZV5"
     };
-    // ---------------------------------------------------------------------
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
 
-    // Helper: POST idToken to backend and handle response
-    async function verifyTokenWithServer(idToken) {
+    // ✅ Initialize Firebase
+    const app = firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const provider = new firebase.auth.GoogleAuthProvider();
+
+    document.getElementById("googleLoginBtn").addEventListener("click", async () => {
       try {
+        const result = await auth.signInWithPopup(provider);
+        const idToken = await result.user.getIdToken();
+
+        // Verify on backend
         const res = await fetch('/auth/verify-token', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ idToken, role: "admin" })
         });
-        return await res.json();
-      } catch (err) {
-        console.error('Network/server error:', err);
-        return { success: false, message: 'Server error' };
-      }
-    }
 
-    // Email/password submit handler
-    document.getElementById('adminLoginForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-
-    try {
-      // Try to login
-      const userCred = await auth.signInWithEmailAndPassword(email, password);
-      const user = userCred.user;
-
-      if (!user.emailVerified) {
-        await auth.signOut();
-        alert("Please verify your email before logging in. A verification email has been sent again.");
-        await user.sendEmailVerification();
-        return;
-      }
-
-      // ✅ Login success and email verified
-      const idToken = await user.getIdToken();
-      const res = await fetch('/auth/verify-token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken, role: "admin" })
-      });
-
-      const data = await res.json();
-      if (data.success && data.role === "admin") {
-        window.location.href = '/admin.html';
-      } else {
-        alert(data.message || 'Admin login failed!');
-      }
-
-    } catch (err) {
-      if (err.code === "auth/user-not-found") {
-        // Auto-register new admin
-        try {
-          const newUserCred = await auth.createUserWithEmailAndPassword(email, password);
-          await newUserCred.user.sendEmailVerification();
-          alert("✅ Admin account created. Please check your email to verify before login.");
-        } catch (signupErr) {
-          alert("Signup error: " + signupErr.message);
-        }
-      } else {
-        alert("Login error: " + err.message);
-      }
-    }
-  });
-
-    // Google sign-in button
-    document.getElementById('googleSignIn').addEventListener('click', async () => {
-      const provider = new firebase.auth.GoogleAuthProvider();
-      try {
-        const result = await auth.signInWithPopup(provider);
-        const user = result.user;
-
-        // Google accounts are typically already verified by provider
-        const idToken = await user.getIdToken();
-        const data = await verifyTokenWithServer(idToken);
-
-        if (data.success && data.role === 'admin') {
+        const data = await res.json();
+        if (data.success && data.role === "admin") {
           window.location.href = '/admin.html';
         } else {
-          alert(data.message || 'Admin login failed (not authorized).');
-          await auth.signOut();
+          alert(data.message || "Not authorized as admin");
         }
       } catch (err) {
-        console.error('Google sign-in error:', err);
-        alert('Google sign-in error: ' + (err.message || err));
+        alert("Google sign-in error: " + err.message);
       }
     });
   </script>
