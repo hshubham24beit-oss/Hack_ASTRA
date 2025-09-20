@@ -4,100 +4,131 @@
   <meta charset="utf-8">
   <title>Voter Login - VoteChain</title>
   <link rel="stylesheet" href="style.css">
+  <!-- Use compat build (same as admin-login.html) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; background:#f3f6fb; padding:30px; }
+    .container { max-width:420px; margin:40px auto; background:#fff; padding:20px; border-radius:10px; box-shadow:0 6px 18px rgba(20,30,60,0.08); }
+    h1 { text-align:center; margin-bottom:10px; }
+    input { width:100%; padding:10px; margin:8px 0; border-radius:6px; border:1px solid #ccd6e6; box-sizing:border-box; }
+    button { width:100%; padding:10px; margin-top:10px; border-radius:6px; border:none; background:#0b63c6; color:#fff; font-weight:600; cursor:pointer; }
+    .small-btn { background:#fff; color:#0b63c6; border:1px solid #0b63c6; }
+    .sep { text-align:center; margin:12px 0; color:#666; font-size:14px; }
+    .helper { font-size:13px; color:#666; margin-top:8px; text-align:center; }
+  </style>
 </head>
 <body>
-  <h1 style="text-align:center;">🗳️ Voter Login</h1>
   <div class="container">
+    <h1>🗳️ Voter Login</h1>
+
     <form id="voterLoginForm">
-      <input type="email" id="email" placeholder="Voter Email" required />
-      <input type="password" id="password" placeholder="Password" required />
-      <button type="submit">Login with Email</button>
+      <input type="email" id="email" placeholder="Enter Email" required />
+      <input type="password" id="password" placeholder="Enter Password" required />
+      <button type="submit">Login</button>
     </form>
 
-    <button id="googleBtn">Login with Google</button>
-    <div id="msg" style="margin-top:10px;color:#b33;"></div>
+    <div class="sep">or</div>
+
+    <button id="googleSignIn" class="small-btn">Sign in with Google</button>
+
+    <div class="helper">
+      Please make sure your email is verified before logging in.
+    </div>
   </div>
 
   <script>
-    // ✅ Firebase Config
+    // 🔧 Your Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyBLCWcNSRxox56IbkahS4rNwTVIPCnFW9Q",
       authDomain: "vote-chain-78885.firebaseapp.com",
       projectId: "vote-chain-78885",
       storageBucket: "vote-chain-78885.firebasestorage.app",
       messagingSenderId: "575284193703",
-      appId: "1:575284193703:web:ecad4994f0311b7bcbae82"
+      appId: "1:575284193703:web:ecad4994f0311b7bcbae82",
+      measurementId: "G-FMKST3HZV5"
     };
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
-    const msgEl = document.getElementById('msg');
-    function showMsg(t){ msgEl.innerText=t; setTimeout(()=>msgEl.innerText='',6000); }
 
-    // ---------- Email/Password Login ----------
-    document.getElementById('voterLoginForm').addEventListener('submit', async (e)=>{
-      e.preventDefault();
-      const email=document.getElementById('email').value.trim();
-      const password=document.getElementById('password').value;
+    // Helper: verify token on backend
+    async function verifyTokenWithServer(idToken) {
+      const res = await fetch('/auth/verify-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken, role: "voter" })
+      });
+      return await res.json();
+    }
 
-      try {
-        const userCred=await auth.signInWithEmailAndPassword(email,password);
-        const user=userCred.user;
+    // Email/password login
+     document.getElementById('voterLoginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
 
-        if(!user.emailVerified){
-          await user.sendEmailVerification();
-          await auth.signOut();
-          return showMsg("Please verify your email. Verification link sent.");
-        }
+    try {
+      // Try to login
+      const userCred = await auth.signInWithEmailAndPassword(email, password);
+      const user = userCred.user;
 
-        const idToken=await user.getIdToken();
-        const res=await fetch('/auth/verify-token',{
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({idToken,role:'voter'})
-        });
-        const data=await res.json();
-        if(data.success){
-          localStorage.setItem('voterId',data.voterId);
-          window.location.href='/voter.html';
-        }
-        else showMsg(data.message||"Server rejected login");
-      } catch(err){
-        if(err.code==='auth/user-not-found'){
-          try{
-            const newUser=await auth.createUserWithEmailAndPassword(email,password);
-            await newUser.user.sendEmailVerification();
-            await auth.signOut();
-            showMsg("Account created. Please verify your email.");
-          }catch(e){ showMsg("Signup error: "+e.message); }
-        } else {
-          showMsg("Login error: "+err.message);
-        }
+      if (!user.emailVerified) {
+        await auth.signOut();
+        alert("Please verify your email before logging in. A verification email has been sent again.");
+        await user.sendEmailVerification();
+        return;
       }
-    });
 
-    // ---------- Google Login ----------
-    document.getElementById('googleBtn').addEventListener('click', async ()=>{
-      const provider=new firebase.auth.GoogleAuthProvider();
-      try{
-        const result=await auth.signInWithPopup(provider);
-        const user=result.user;
-        const idToken=await user.getIdToken();
+      // ✅ Login success and email verified
+      const idToken = await user.getIdToken();
+      const res = await fetch('/auth/verify-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken, role: "voter" })
+      });
 
-        const res=await fetch('/auth/verify-token',{
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({idToken,role:'voter'})
-        });
-        const data=await res.json();
-        if(data.success){
-          localStorage.setItem('voterId',data.voterId);
-          window.location.href='/voter.html';
+      const data = await res.json();
+      if (data.success && data.role === "voter") {
+        localStorage.setItem('voterId', data.voterId);
+        window.location.href = '/voter.html';
+      } else {
+        alert(data.message || 'Voter login failed!');
+      }
+
+    } catch (err) {
+      if (err.code === "auth/user-not-found") {
+        // Auto-register new voter
+        try {
+          const newUserCred = await auth.createUserWithEmailAndPassword(email, password);
+          await newUserCred.user.sendEmailVerification();
+          alert("✅ Voter account created. Please check your email to verify before login.");
+        } catch (signupErr) {
+          alert("Signup error: " + signupErr.message);
         }
-        else showMsg(data.message||"Server rejected login");
-      }catch(err){
-        showMsg("Google sign-in error: "+err.message);
+      } else {
+        alert("Login error: " + err.message);
+      }
+    }
+  });
+
+    // Google sign-in
+    document.getElementById('googleSignIn').addEventListener('click', async () => {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      try {
+        const result = await auth.signInWithPopup(provider);
+        const user = result.user;
+        const idToken = await user.getIdToken();
+        const data = await verifyTokenWithServer(idToken);
+
+        if (data.success && data.role === "voter") {
+          localStorage.setItem('voterId', data.voterId);
+          window.location.href = '/voter.html';
+        } else {
+          alert(data.message || "Voter login failed!");
+          await auth.signOut();
+        }
+      } catch (err) {
+        alert("Google sign-in error: " + err.message);
       }
     });
   </script>
