@@ -1,153 +1,704 @@
-/* ========================
-   Global Styling
-   ======================== */
+/* General Page Styling */
 body {
-  font-family: 'Poppins', sans-serif;
   margin: 0;
-  background: #F5F7FA;
-  color: #202124;
-  line-height: 1.6;
+  font-family: Arial, sans-serif;
+  background: #f4f8fc;
+  color: #333;
+  text-align: center;
+}/* General Page Styling */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f4f8fc;
+  color: #333;
+  text-align: center;
 }
 
-h1, h2, h3 {
-  font-weight: 600;
-  margin-bottom: 15px;
+/* Header & Navbar */
+header {
+  background: #1565C0;
+  padding: 12px 0;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 }
 
-a {
-  text-decoration: none;
-  color: #1A73E8;
-}
-a:hover {
-  text-decoration: underline;
-}
-
-/* ========================
-   Navbar
-   ======================== */
 .navbar {
-  background: #1A73E8;
-  color: #fff;
-  padding: 15px 30px;
+  width: 90%;
+  margin: auto;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
-.navbar .brand {
-  font-weight: bold;
+
+.brand {
   font-size: 22px;
-}
-.navbar .nav-links a {
   color: #fff;
-  margin-left: 20px;
-  font-weight: 500;
+  text-decoration: none;
+  font-weight: bold;
 }
 
-/* ========================
-   Container & Cards
-   ======================== */
-.container {
-  max-width: 800px;
-  margin: 30px auto;
-  background: #fff;
-  padding: 30px;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-}
-
-.card {
-  background: #fff;
-  border-radius: 10px;
-  padding: 20px;
-  margin: 15px 0;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-}
-
-/* ========================
-   Forms & Buttons
-   ======================== */
-input, select, textarea {
-  width: 100%;
-  padding: 12px;
-  margin: 10px 0;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 15px;
-}
-
-button {
-  background: #1A73E8;
+.nav-links a {
+  margin: 0 12px;
   color: #fff;
-  border: none;
-  padding: 12px 18px;
-  border-radius: 8px;
-  cursor: pointer;
+  text-decoration: none;
   font-size: 16px;
-  transition: 0.3s;
-  width: 100%;
-}
-button:hover {
-  background: #1557b0;
 }
 
-/* ========================
-   Candidate Radio Buttons
-   ======================== */
-.candidate-list {
-  display: grid;
-  gap: 12px;
-  margin: 15px 0;
+.nav-links a:hover {
+  text-decoration: underline;
 }
-.candidate-option {
+
+/* Main content */
+main {
+  padding: 60px 20px;
+}
+
+h1 {
+  color: #1565C0;
+  font-size: 36px;
+  margin-bottom: 10px;
+}
+
+p {
+  font-size: 18px;
+  color: #444;
+}
+
+
+/* Header & Navbar */
+header {
+  background: #1565C0;
+  padding: 12px 0;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.navbar {
+  width: 90%;
+  margin: auto;
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  padding: 12px 15px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: 0.2s;
-}
-.candidate-option:hover {
-  background: #f1f6ff;
-  border-color: #1A73E8;
-}
-.candidate-option input[type="radio"] {
-  margin-right: 12px;
-  transform: scale(1.2);
 }
 
-/* ========================
-   Messages
-   ======================== */
-.success {
-  background: #e6f4ea;
-  color: #137333;
-  padding: 12px 15px;
+.brand {
+  font-size: 22px;
+  color: #fff;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.nav-links a {
+  margin: 0 12px;
+  color: #fff;
+  text-decoration: none;
+  font-size: 16px;
+}
+
+.nav-links a:hover {
+  text-decoration: underline;
+}
+
+/* Main content */
+main {
+  padding: 60px 20px;
+}
+
+h1 {
+  color: #1565C0;
+  font-size: 36px;
+  margin-bottom: 10px;
+}
+
+p {
+  font-size: 18px;
+  color: #444;
+}
+
+
+/* Results Page Styling */
+.results-box {
+  display: inline-block;
+  text-align: left;
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  margin-bottom: 30px;
+}
+
+.results-box .candidate {
+  font-size: 18px;
+  margin: 6px 0;
+  padding: 6px 10px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.ledger {
+  text-align: left;
+  display: inline-block;
+  background: #fafafa;
+  padding: 15px;
   border-radius: 8px;
-  margin: 10px 0;
+  box-shadow: inset 0 0 4px rgba(0,0,0,0.1);
+  max-width: 90%;
+  overflow-x: auto;
+}
+
+
+
+/* Login Page */
+.login-box {
+  background: #fff;
+  padding: 40px;
+  border-radius: 10px;
+  width: 320px;
+  margin: 60px auto;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.login-box h1 {
+  color: #1565C0;
+  margin-bottom: 20px;
+}
+
+.login-box input, .login-box select {
+  width: 90%;
+  padding: 10px;
+  margin-bottom: 10px;
+  border: 1px solid #bbb;
+  border-radius: 6px;
+}
+
+.login-box button {
+  width: 95%;
+  padding: 10px;
+  background: #1565C0;
+  border: none;
+  color: white;
+  font-size: 16px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.login-box button:hover {
+  background: #0d47a1;
 }
 
 .error {
-  background: #fce8e6;
-  color: #c5221f;
-  padding: 12px 15px;
-  border-radius: 8px;
-  margin: 10px 0;
+  color: red;
+  margin-top: 10px;
 }
 
-/* ========================
-   Responsive
-   ======================== */
-@media (max-width: 600px) {
-  .container {
-    padding: 20px;
-    margin: 15px;
-  }
-  .navbar {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  .navbar .nav-links {
-    margin-top: 10px;
-  }
+
+/* Result / Response message box after clicking buttons */
+.result-message, .vote-message {
+  margin: 30px auto;
+  padding: 20px 25px;
+  width: 60%;
+  max-width: 500px;
+  text-align: center;
+  font-size: 1.2rem;
+  color: #333;
+  background: #f1f9ff;
+  border: 2px solid #0077cc;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  animation: fadeIn 0.4s ease;
 }
+
+/* Success/Fail colors */
+.success {
+  border-color: #28a745;
+  background: #e7f9ed;
+  color: #155724;
+}
+
+.error {
+  border-color: #dc3545;
+  background: #fdecea;
+  color: #721c24;
+}
+
+/* Small fade animation */
+@keyframes fadeIn {
+  from {opacity: 0; transform: translateY(10px);}
+  to {opacity: 1; transform: translateY(0);}
+}
+
+.result-message {
+  margin: 50px auto;
+  padding: 25px;
+  width: 80%;
+  max-width: 500px;
+  text-align: center;
+  font-size: 1.2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.result-message.success {
+  background: #e7f9ed;
+  border: 2px solid #28a745;
+  color: #155724;
+}
+
+.result-message.error {
+  background: #fdecea;
+  border: 2px solid #dc3545;
+  color: #721c24;
+}
+
+.result-message a {
+  display:inline-block;
+  margin-top:15px;
+  color:#0077cc;
+  text-decoration:none;
+  font-weight:bold;
+}
+
+
+
+/* Navbar */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 40px;
+  background: #0077cc;
+  color: #fff;
+}
+.navbar .brand {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+.navbar .nav-link {
+  color: #fff;
+  text-decoration: none;
+  margin-left: 20px;
+  font-weight: 500;
+}
+.navbar .nav-link:hover {
+  text-decoration: underline;
+}
+
+/* Hero section */
+.hero {
+  text-align: center;
+  padding: 100px 20px;
+  background: linear-gradient(135deg, #e0f2ff, #ffffff);
+}
+.hero h1 {
+  font-size: 2.5rem;
+  margin-bottom: 15px;
+  color: #004b8d;
+}
+.hero p {
+  font-size: 1.2rem;
+  color: #333;
+  margin-bottom: 40px;
+}
+
+/* Buttons */
+.button-group .btn {
+  display: inline-block;
+  background: #0077cc;
+  color: #fff;
+  text-decoration: none;
+  padding: 12px 25px;
+  border-radius: 30px;
+  margin: 10px;
+  transition: all 0.2s ease;
+}
+.button-group .btn.secondary {
+  background: #28a745;
+}
+.button-group .btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+/* Footer */
+footer {
+  text-align: center;
+  padding: 25px;
+  background: #f1f1f1;
+  color: #666;
+  font-size: 0.9rem;
+  margin-top: 50px;
+}
+
+
+/* ====== Results Page Styling ====== */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  background: #f3f3f3;
+}
+
+.navbar {
+  background: #1565C0;
+  padding: 15px 30px;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.navbar .nav-links a {
+  color: white;
+  text-decoration: none;
+  margin-left: 20px;
+  font-weight: bold;
+}
+
+.content {
+  max-width: 900px;
+  margin: 30px auto;
+  padding: 20px;
+}
+
+.election-card {
+  background: white;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+}
+
+.election-card h3 {
+  margin-top: 0;
+  color: #333;
+}
+
+.candidate-list {
+  margin-top: 15px;
+}
+
+.candidate {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.candidate:last-child {
+  border-bottom: none;
+}
+
+.vote-count {
+  font-weight: bold;
+  color: #4CAF50;
+}
+
+.ledger {
+  background: #222;
+  color: #0f0;
+  padding: 15px;
+  border-radius: 10px;
+  overflow-x: auto;
+}
+
+.back-link {
+  display: inline-block;
+  margin-top: 20px;
+  color: #2196F3;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.no-results {
+  text-align: center;
+  padding: 50px;
+}
+
+
+/* Remove red background from candidate input fields */
+.candidate-input {
+  background-color: #f0f4ff; /* light blue background */
+  border: 1px solid #ccc;
+  padding: 8px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  width: 100%;
+  outline: none;
+}
+
+.candidate-input:focus {
+  border-color: #4CAF50;
+  background-color: #ffffff;
+}
+
+
+/* ---------- Vote Error Page ---------- */
+.error-box {
+  background: #f8d7da;
+  border: 1px solid #f5c6cb;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  text-align: center;
+  max-width: 500px;
+  margin: 100px auto;
+  color: #721c24;
+  font-family: Arial, sans-serif;
+}
+
+.error-box h1 {
+  margin-bottom: 15px;
+  font-size: 24px;
+}
+
+.error-box p {
+  font-size: 16px;
+}
+
+.back-btn {
+  display: inline-block;
+  margin-top: 20px;
+  padding: 10px 20px;
+  background: #721c24;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 5px;
+  transition: background 0.3s ease;
+}
+
+.back-btn:hover {
+  background: #501218;
+}
+
+
+/* ========== ADMIN PANEL STYLES ========== */
+body {
+  margin: 0;
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: #f2f5fa;
+  color: #333;
+}
+
+.navbar {
+  background: #1e88e5;
+  color: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 25px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.navbar .brand {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.navbar .nav-links a {
+  color: #fff;
+  margin-left: 15px;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.navbar .nav-links a:hover {
+  text-decoration: underline;
+}
+
+h1, h2 {
+  text-align: center;
+  color: #1e3d58;
+}
+
+.container {
+  max-width: 800px;
+  margin: 30px auto;
+  background: #ffffff;
+  padding: 30px 40px;
+  border-radius: 12px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+form input[type="text"],
+form input[type="datetime-local"],
+form button {
+  width: 100%;
+  padding: 12px;
+  margin: 10px 0 20px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+}
+
+form button {
+  background: #1e88e5;
+  color: #fff;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+form button:hover {
+  background: #1565c0;
+}
+
+.election-list {
+  margin-top: 40px;
+}
+
+.election-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f9fbfd;
+  border: 1px solid #dbe3eb;
+  padding: 15px 20px;
+  margin: 10px 0;
+  border-radius: 8px;
+}
+
+.election-item strong {
+  color: #1e3d58;
+}
+
+.publish-btn {
+  background: #43a047;
+  border: none;
+  color: white;
+  padding: 10px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.3s ease;
+}
+
+.publish-btn:hover {
+  background: #2e7d32;
+}
+
+.publish-btn:disabled {
+  background: gray;
+  cursor: not-allowed;
+}
+
+.success-message {
+  text-align: center;
+  padding: 20px;
+  background: #e8f5e9;
+  border: 1px solid #c8e6c9;
+  border-radius: 8px;
+  color: #2e7d32;
+  font-weight: bold;
+}
+
+.dispute-card {
+  border: 1px solid #ddd;
+  padding: 10px;
+  margin: 10px 0;
+  background: #fff;
+  border-radius: 6px;
+}
+.dispute-card textarea { margin-top: 8px; }
+
+/* ===== Login Page Styles (shared) ===== */
+body.login-page {
+  font-family: Arial, sans-serif;
+  background: #f3f3f3;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+}
+
+.login-container {
+  background: #fff;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+  width: 360px;
+  text-align: center;
+}
+
+.login-container h1 {
+  margin-bottom: 18px;
+  font-size: 22px;
+}
+
+.login-container input {
+  width: 100%;
+  padding: 12px;
+  margin: 8px 0;
+  border-radius: 6px;
+  border: 1px solid #d0d7de;
+  box-sizing: border-box;
+}
+
+.login-container button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+/* Color variants */
+body.admin-login .login-container h1 { color: #0077cc; }
+body.admin-login .login-container button { background: #0077cc; color: #fff; }
+body.admin-login .login-container button:hover { background: #005fa3; }
+
+body.voter-login .login-container h1 { color: #198754; }
+body.voter-login .login-container button { background: #198754; color: #fff; }
+body.voter-login .login-container button:hover { background: #12693f; }
+
+body.results-login .login-container h1 { color: #ff9800; }
+body.results-login .login-container button { background: #ff9800; color: #fff; }
+body.results-login .login-container button:hover { background: #e68900; }
+
+/* small helper */
+a.small-link { display:block; margin-top:10px; color:#555; text-decoration:none; font-size:14px; }
+
+/* Candidate Radio Buttons */
+.candidate-option {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  padding: 12px;
+  margin: 8px 0;
+  border-radius: 8px;
+  border: 2px solid #ccc;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.candidate-option:hover {
+  border-color: #0077cc;
+  background: #f0f8ff;
+}
+
+.candidate-option input[type="radio"] {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #0077cc;
+  border-radius: 50%;
+  outline: none;
+  margin-right: 12px;
+  cursor: pointer;
+  position: relative;
+}
+
+.candidate-option input[type="radio"]:checked {
+  background-color: #0077cc;
+}
+
+.candidate-option label {
+  font-size: 16px;
+  color: #333;
+  cursor: pointer;
+}
+
+

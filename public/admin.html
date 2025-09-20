@@ -4,32 +4,47 @@
   <meta charset="utf-8">
   <title>Admin Panel - VoteChain</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    body { font-family: Arial, sans-serif; background: #f3f3f3; padding: 20px; }
+    h1 { text-align: center; }
+    .container { max-width: 700px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    input, button { width: 100%; margin: 10px 0; padding: 10px; border-radius: 5px; border: 1px solid #ccc; }
+    button { background: #0077cc; color: white; cursor: pointer; }
+    button:hover { background: #005fa3; }
+    .election-item { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; background: #fafafa; }
+    .publish-btn { background: green; color: white; border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; }
+    .publish-btn:disabled { background: gray; cursor: not-allowed; }
+  </style>
 </head>
 <body>
-  <header class="navbar">
-    <div class="brand">🛡️ Admin Panel</div>
-    <div class="nav-links">
-      <a href="/">Home</a>
-      <a href="admin-login.html">Logout</a>
-    </div>
-  </header>
+
+  <h1>🛡️ Admin Panel</h1>
 
   <div class="container">
-    <h1>Create New Election</h1>
+    <h2>Create New Election</h2>
     <form method="POST" action="/create-election">
       <input type="text" name="title" placeholder="Election Title" required>
-      <input type="text" name="candidates" placeholder="Candidate names (comma separated)" required>
+      <div id="candidatesContainer">
+  <input type="text" name="candidates[]" placeholder="Candidate Name" required>
+</div>
+<button type="button" onclick="addCandidate()">➕ Add Candidate</button>
+
       <label><strong>Start Date & Time</strong></label>
       <input type="datetime-local" name="startDate" required>
       <label><strong>End Date & Time</strong></label>
       <input type="datetime-local" name="endDate" required>
-      <button type="submit">➕ Create Election</button>
+      <button type="submit">Create Election</button>
     </form>
-  </div>
 
-  <div class="container">
-    <h1>Existing Elections</h1>
-    <div id="electionsContainer">Loading elections...</div>
+    <div class="election-list">
+      <h2>Existing Elections</h2>
+      <div id="electionsContainer">Loading elections...</div>
+    </div>
+
+    <hr>
+<h2>Disputes</h2>
+<div id="disputesContainer">Loading disputes...</div>
+
   </div>
 
   <script>
@@ -50,14 +65,16 @@
           container.innerHTML = "";
           data.forEach(e => {
             const div = document.createElement("div");
-            div.className = "card";
+            div.className = "election-item";
             div.innerHTML = `
-              <h3>${e.title}</h3>
-              <p><strong>Candidates:</strong> ${e.candidates.join(", ")}</p>
-              <p>🕒 ${formatDateTime(e.startDate)} - ${formatDateTime(e.endDate)}</p>
-              <p>Status: ${e.published ? "✅ Published" : "🕒 Not Published"}</p>
+              <div>
+                <strong>${e.title}</strong><br>
+                Candidates: ${e.candidates.join(", ")}<br>
+                <small>🕒 ${formatDateTime(e.startDate)} - ${formatDateTime(e.endDate)}</small><br>
+                Status: ${e.published ? "✅ Published" : "🕒 Not Published"}
+              </div>
               <button class="publish-btn" ${e.published ? "disabled" : ""} onclick="publish('${e.id}')">
-                📢 Publish Results
+                Publish Results
               </button>
             `;
             container.appendChild(div);
@@ -74,6 +91,54 @@
     }
 
     loadElections();
+
+    function addCandidate() {
+    const container = document.getElementById("candidatesContainer");
+    const input = document.createElement("input");
+    input.type = "text";
+    input.name = "candidates[]";
+    input.placeholder = "Candidate Name";
+    input.required = true;
+    container.appendChild(input);
+  }
   </script>
+
+  <script>
+  async function loadDisputes() {
+    const res = await fetch('/disputes');
+    const disputes = await res.json();
+    const container = document.getElementById('disputesContainer');
+    if (!disputes.length) { container.innerHTML = '<p>No disputes</p>'; return; }
+    container.innerHTML = disputes.map(d => `
+      <div class="dispute-card" id="dispute-${d._id}">
+        <strong>Issue:</strong> ${d.issue} <br>
+        <strong>Voter:</strong> ${d.voterId} <br>
+        <strong>Election:</strong> ${d.electionId} <br>
+        <strong>Status:</strong> ${d.status} <br>
+        <textarea id="res-${d._id}" placeholder="Write resolution here..." rows="2" style="width:100%"></textarea>
+        <button onclick="resolveDispute('${d._id}', 'Resolved')">Resolve</button>
+        <button onclick="resolveDispute('${d._id}', 'Rejected')">Reject</button>
+      </div>
+    `).join('');
+  }
+
+  async function resolveDispute(id, status) {
+    const resolution = document.getElementById(`res-${id}`).value || '';
+    const res = await fetch(`/resolve-dispute/${id}`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ status, resolution /* optional adminPass: '123' */ })
+    });
+    const j = await res.json();
+    if (j.success) {
+      alert('Dispute updated');
+      loadDisputes();
+    } else alert(j.message || 'Error');
+  }
+
+  loadDisputes();
+  // optionally refresh every 20s: setInterval(loadDisputes, 20000);
+</script>
+
 </body>
 </html>
