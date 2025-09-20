@@ -659,3 +659,46 @@ body.results-login .login-container button:hover { background: #e68900; }
 /* small helper */
 a.small-link { display:block; margin-top:10px; color:#555; text-decoration:none; font-size:14px; }
 
+/* Candidate Radio Buttons */
+.candidate-option {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  padding: 12px;
+  margin: 8px 0;
+  border-radius: 8px;
+  border: 2px solid #ccc;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.candidate-option:hover {
+  border-color: #0077cc;
+  background: #f0f8ff;
+}
+
+.candidate-option input[type="radio"] {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #0077cc;
+  border-radius: 50%;
+  outline: none;
+  margin-right: 12px;
+  cursor: pointer;
+  position: relative;
+}
+
+.candidate-option input[type="radio"]:checked {
+  background-color: #0077cc;
+}
+
+.candidate-option label {
+  font-size: 16px;
+  color: #333;
+  cursor: pointer;
+}
+
+
