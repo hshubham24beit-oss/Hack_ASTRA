@@ -1,14 +1,6 @@
 
 require('dotenv').config();
 
-const admin = require("firebase-admin");
-const serviceAccount = require("./serviceAccountKey.json");
-
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
-
-
 const express = require("express");
 const bodyParser = require("body-parser");
 const path = require("path");
@@ -17,6 +9,16 @@ const { Block, Blockchain } = require("./blockchain");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const admin = require("firebase-admin");
+
+/* ------------------------- FIREBASE ADMIN CONFIG ------------------------- */
+admin.initializeApp({
+  credential: admin.credential.cert({
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+    privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+  }),
+});
 
 /* ------------------------- CONNECT TO MONGODB ------------------------- */
 mongoose.set("strictQuery", false);
@@ -29,6 +31,7 @@ mongoose
   .connect(mongoURI)
   .then(() => console.log("✅ Connected to MongoDB Atlas"))
   .catch((err) => console.error("❌ MongoDB connection error:", err));
+
 
 /* ------------------------- SCHEMAS ------------------------- */
 const voterSchema = new mongoose.Schema({
