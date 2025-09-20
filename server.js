@@ -422,38 +422,26 @@ app.post("/resolve-dispute/:id", async (req, res, next) => {
 });
 
 app.post("/auth/verify-token", async (req, res) => {
-  const { idToken, role } = req.body;
-
   try {
-    // Verify Firebase ID token
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
-    const email = decodedToken.email;
+    const { idToken, role } = req.body;
+    const decoded = await admin.auth().verifyIdToken(idToken);
 
-    // Special case for admin login
+    // ✅ Allow any Firebase-authenticated user
     if (role === "admin") {
-      if (email === "admin@gmail.com") {
-        return res.json({ success: true, role: "admin" });
-      } else {
-        return res.json({ success: false, message: "Not authorized as admin" });
-      }
+      return res.json({ success: true, role: "admin", email: decoded.email });
     }
 
-    // For voters
-    let voter = await Voter.findOne({ email });
-    if (!voter) {
-      voter = await Voter.create({
-        email,
-        password: "", // Firebase handles passwords, so leave empty
-        voterId: "VOTER-" + Math.random().toString(36).substring(2, 10).toUpperCase(),
-      });
+    if (role === "voter") {
+      return res.json({ success: true, role: "voter", voterId: decoded.uid, email: decoded.email });
     }
 
-    res.json({ success: true, role: "voter", voterId: voter.voterId });
+    res.json({ success: false, message: "Invalid role" });
   } catch (err) {
-    console.error("❌ Firebase verification error:", err);
-    res.json({ success: false, message: "Invalid Firebase token" });
+    console.error("❌ Firebase token verification failed:", err);
+    res.json({ success: false, message: "Authentication failed" });
   }
 });
+
 
 /* ------------------------- ERROR HANDLER ------------------------- */
 app.use((err, req, res, next) => {
